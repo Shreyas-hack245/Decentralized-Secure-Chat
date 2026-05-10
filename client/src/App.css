@@ -1,0 +1,38 @@
+.features {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+
+  padding: 50px;
+  flex-wrap: wrap;
+}
+
+.card {
+  width: 300px;
+
+  background-color: #111827;
+
+  padding: 30px;
+
+  border-radius: 15px;
+
+  transition: 0.3s;
+
+  border: 1px solid #1e293b;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+
+  border: 1px solid #38bdf8;
+
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+}
+
+.card h2 {
+  color: #38bdf8;
+}
+
+.card p {
+  color: #94a3b8;
+}
