@@ -1,2 +1,0 @@
-# decentralized-secure-chat
-secure
