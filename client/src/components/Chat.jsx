@@ -1,4 +1,55 @@
+import { useEffect, useState } from "react";
+
+import io from "socket.io-client";
+
+const socket = io("http://localhost:5000");
+
 function Chat() {
+
+  const [message, setMessage] = useState("");
+
+  const [messages, setMessages] = useState([]);
+
+  function sendMessage() {
+
+    if (message.trim() === "") return;
+
+    const messageData = {
+      text: message,
+      type: "sent",
+    };
+
+    setMessages((prev) => [
+      ...prev,
+      messageData,
+    ]);
+
+    socket.emit(
+      "send_message",
+      messageData
+    );
+
+    setMessage("");
+  }
+
+  useEffect(() => {
+
+    socket.on(
+      "receive_message",
+      (data) => {
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            ...data,
+            type: "received",
+          },
+        ]);
+
+      }
+    );
+
+  }, []);
 
   return (
 
@@ -6,13 +57,20 @@ function Chat() {
 
       <div className="chat-box">
 
-        <div className="message received">
-          Hello 👋
-        </div>
+        {
+          messages.map((msg, index) => (
 
-        <div className="message sent">
-          Hi 🚀
-        </div>
+            <div
+              key={index}
+              className={`message ${msg.type}`}
+            >
+
+              {msg.text}
+
+            </div>
+
+          ))
+        }
 
       </div>
 
@@ -21,9 +79,13 @@ function Chat() {
         <input
           type="text"
           placeholder="Type message..."
+          value={message}
+          onChange={(e) =>
+            setMessage(e.target.value)
+          }
         />
 
-        <button>
+        <button onClick={sendMessage}>
           Send
         </button>
 
