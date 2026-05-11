@@ -1,20 +1,30 @@
-import WalletButton from "./WalletButton";
+function Hero({ connectWallet }) {
 
-function Hero() {
   return (
-    <div className="hero">
+
+    <section className="hero">
 
       <h1 className="title">
         Decentralized Secure Chat
       </h1>
 
       <p className="subtitle">
+
         End-to-End Encrypted Blockchain Messaging
+
       </p>
 
-      <WalletButton />
+      <button
+        className="connect-btn"
+        onClick={connectWallet}
+      >
 
-    </div>
+        Connect Wallet
+
+      </button>
+
+    </section>
+
   );
 }
 

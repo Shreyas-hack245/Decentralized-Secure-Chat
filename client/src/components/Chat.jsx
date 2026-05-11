@@ -10,38 +10,44 @@ const SECRET_KEY = "securechatkey";
 
 function Chat() {
 
-  const [username, setUsername] = useState("");
+  const [username, setUsername] =
+    useState("");
 
-  const [joined, setJoined] = useState(false);
+  const [message, setMessage] =
+    useState("");
 
-  const [message, setMessage] = useState("");
+  const [messages, setMessages] =
+    useState([]);
 
-  const [messages, setMessages] = useState([]);
-
-  const [onlineUsers, setOnlineUsers] =
+  const [onlineUsers,
+    setOnlineUsers] =
     useState(0);
+
+  const [chatStarted,
+    setChatStarted] =
+    useState(false);
 
   function joinChat() {
 
-    if (username.trim() === "") return;
+    if (
+      username.trim() === ""
+    ) return;
 
-    setJoined(true);
+    setChatStarted(true);
   }
 
   function sendMessage() {
 
-    if (message.trim() === "") return;
+    if (
+      message.trim() === ""
+    ) return;
 
     const encryptedMessage =
+
       CryptoJS.AES.encrypt(
         message,
         SECRET_KEY
       ).toString();
-
-    console.log(
-      "Encrypted:",
-      encryptedMessage
-    );
 
     const messageData = {
 
@@ -53,8 +59,11 @@ function Chat() {
     };
 
     setMessages((prev) => [
+
       ...prev,
+
       messageData,
+
     ]);
 
     socket.emit(
@@ -63,7 +72,6 @@ function Chat() {
     );
 
     setMessage("");
-
   }
 
   useEffect(() => {
@@ -73,11 +81,14 @@ function Chat() {
       (data) => {
 
         setMessages((prev) => [
+
           ...prev,
+
           {
             ...data,
             type: "received",
           },
+
         ]);
 
       }
@@ -94,7 +105,7 @@ function Chat() {
 
   }, []);
 
-  if (!joined) {
+  if (!chatStarted) {
 
     return (
 
@@ -103,11 +114,11 @@ function Chat() {
         <div className="join-card">
 
           <h1>
-            Secure Global Chat
+            Welcome Secure User
           </h1>
 
           <p>
-            End-to-End Encrypted Messaging
+            Create your secure identity
           </p>
 
           <input
@@ -115,12 +126,18 @@ function Chat() {
             placeholder="Enter username"
             value={username}
             onChange={(e) =>
-              setUsername(e.target.value)
+              setUsername(
+                e.target.value
+              )
             }
           />
 
-          <button onClick={joinChat}>
+          <button
+            onClick={joinChat}
+          >
+
             Join Chat
+
           </button>
 
         </div>
@@ -165,8 +182,10 @@ function Chat() {
           </h3>
 
           <p>
+
             AES-256 encryption enabled
             for all messages.
+
           </p>
 
         </div>
@@ -189,7 +208,9 @@ function Chat() {
 
           <p>
 
-            {onlineUsers} Users Online
+            {onlineUsers}
+            {" "}
+            Users Online
 
           </p>
 
@@ -198,7 +219,9 @@ function Chat() {
         <div className="messages-area">
 
           {
-            messages.map((msg, index) => (
+
+            messages.map(
+              (msg, index) => (
 
               <div
                 key={index}
@@ -212,6 +235,7 @@ function Chat() {
                 <p>
 
                   {
+
                     CryptoJS.AES.decrypt(
                       msg.text,
                       SECRET_KEY
@@ -219,6 +243,7 @@ function Chat() {
                     .toString(
                       CryptoJS.enc.Utf8
                     )
+
                   }
 
                 </p>
@@ -226,6 +251,7 @@ function Chat() {
               </div>
 
             ))
+
           }
 
         </div>
@@ -237,12 +263,18 @@ function Chat() {
             placeholder="Type your message..."
             value={message}
             onChange={(e) =>
-              setMessage(e.target.value)
+              setMessage(
+                e.target.value
+              )
             }
           />
 
-          <button onClick={sendMessage}>
+          <button
+            onClick={sendMessage}
+          >
+
             Send
+
           </button>
 
         </div>

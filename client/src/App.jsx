@@ -1,5 +1,7 @@
 import "./App.css";
 
+import { useState } from "react";
+
 import Navbar from "./components/Navbar";
 
 import Hero from "./components/Hero";
@@ -12,6 +14,15 @@ import Background from "./components/Background";
 
 function App() {
 
+  const [walletConnected,
+    setWalletConnected] =
+    useState(false);
+
+  function connectWallet() {
+
+    setWalletConnected(true);
+  }
+
   return (
 
     <div>
@@ -20,11 +31,29 @@ function App() {
 
       <Navbar />
 
-      <Hero />
+      {
 
-      <Features />
+        !walletConnected ? (
 
-      <Chat />
+          <>
+
+            <Hero
+              connectWallet={
+                connectWallet
+              }
+            />
+
+            <Features />
+
+          </>
+
+        ) : (
+
+          <Chat />
+
+        )
+
+      }
 
     </div>
 
