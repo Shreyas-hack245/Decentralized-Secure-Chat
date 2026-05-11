@@ -454,6 +454,57 @@ body {
   border-radius: 16px;
 }
 
+.message-user {
+
+  display: block;
+
+  margin-bottom: 10px;
+
+  font-size: 18px;
+
+  font-weight: bold;
+}
+
+.message-text {
+
+  margin: 0;
+
+  line-height: 1.5;
+
+  word-wrap: break-word;
+}
+
+.message-footer {
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: 12px;
+}
+
+.message-time {
+
+  font-size: 11px;
+
+  color: #dbeafe;
+
+  opacity: 0.8;
+}
+
+.message-status {
+
+  font-size: 14px;
+
+  color: #22c55e;
+
+  font-weight: bold;
+}
+
 .message-bubble.sent {
 
   background:

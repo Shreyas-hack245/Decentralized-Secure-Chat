@@ -13,6 +13,9 @@ function Chat() {
   const [username, setUsername] =
     useState("");
 
+  const [password, setPassword] =
+    useState("");
+
   const [message, setMessage] =
     useState("");
 
@@ -30,8 +33,30 @@ function Chat() {
   function joinChat() {
 
     if (
-      username.trim() === ""
-    ) return;
+
+      username.trim() === "" ||
+
+      password.trim() === ""
+
+    ) {
+
+      alert(
+        "Enter username and password"
+      );
+
+      return;
+    }
+
+    if (
+      password !== "secure123"
+    ) {
+
+      alert(
+        "Wrong password"
+      );
+
+      return;
+    }
 
     setChatStarted(true);
   }
@@ -56,6 +81,16 @@ function Chat() {
       text: encryptedMessage,
 
       type: "sent",
+
+      time:
+        new Date().toLocaleTimeString(
+          [],
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        ),
+
     };
 
     setMessages((prev) => [
@@ -114,11 +149,11 @@ function Chat() {
         <div className="join-card">
 
           <h1>
-            Welcome Secure User
+            Secure Login
           </h1>
 
           <p>
-            Create your secure identity
+            Access encrypted messaging
           </p>
 
           <input
@@ -132,11 +167,22 @@ function Chat() {
             }
           />
 
+          <input
+            type="password"
+            placeholder="Enter password"
+            value={password}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
+              )
+            }
+          />
+
           <button
             onClick={joinChat}
           >
 
-            Join Chat
+            Join Secure Chat
 
           </button>
 
@@ -228,11 +274,13 @@ function Chat() {
                 className={`message-bubble ${msg.type}`}
               >
 
-                <strong>
+                <strong className="message-user">
+
                   {msg.username}
+
                 </strong>
 
-                <p>
+                <p className="message-text">
 
                   {
 
@@ -247,6 +295,30 @@ function Chat() {
                   }
 
                 </p>
+
+                <div className="message-footer">
+
+                  <span className="message-time">
+
+                    {msg.time}
+
+                  </span>
+
+                  {
+
+                    msg.type === "sent" && (
+
+                      <span className="message-status">
+
+                        ✓✓
+
+                      </span>
+
+                    )
+
+                  }
+
+                </div>
 
               </div>
 
