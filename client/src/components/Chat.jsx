@@ -6,15 +6,27 @@ const socket = io("http://localhost:5000");
 
 function Chat() {
 
+  const [username, setUsername] = useState("");
+
+  const [joined, setJoined] = useState(false);
+
   const [message, setMessage] = useState("");
 
   const [messages, setMessages] = useState([]);
+
+  function joinChat() {
+
+    if (username.trim() === "") return;
+
+    setJoined(true);
+  }
 
   function sendMessage() {
 
     if (message.trim() === "") return;
 
     const messageData = {
+      username,
       text: message,
       type: "sent",
     };
@@ -51,6 +63,32 @@ function Chat() {
 
   }, []);
 
+  if (!joined) {
+
+    return (
+
+      <div className="join-container">
+
+        <h2>Join Secure Chat</h2>
+
+        <input
+          type="text"
+          placeholder="Enter username"
+          value={username}
+          onChange={(e) =>
+            setUsername(e.target.value)
+          }
+        />
+
+        <button onClick={joinChat}>
+          Join
+        </button>
+
+      </div>
+
+    );
+  }
+
   return (
 
     <div className="chat-container">
@@ -64,6 +102,12 @@ function Chat() {
               key={index}
               className={`message ${msg.type}`}
             >
+
+              <strong>
+                {msg.username}
+              </strong>
+
+              <br />
 
               {msg.text}
 
