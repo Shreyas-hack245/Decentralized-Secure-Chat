@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 
 import io from "socket.io-client";
 
+import CryptoJS from "crypto-js";
+
 const socket = io("http://localhost:5000");
+
+const SECRET_KEY = "securechatkey";
 
 function Chat() {
 
@@ -25,9 +29,18 @@ function Chat() {
 
     if (message.trim() === "") return;
 
+    const encryptedMessage =
+      CryptoJS.AES.encrypt(
+        message,
+        SECRET_KEY
+      ).toString();
+
     const messageData = {
+
       username,
-      text: message,
+
+      text: encryptedMessage,
+
       type: "sent",
     };
 
@@ -69,7 +82,9 @@ function Chat() {
 
       <div className="join-container">
 
-        <h2>Join Secure Chat</h2>
+        <h2>
+          Join Secure Chat
+        </h2>
 
         <input
           type="text"
@@ -109,7 +124,15 @@ function Chat() {
 
               <br />
 
-              {msg.text}
+              {
+                CryptoJS.AES.decrypt(
+                  msg.text,
+                  SECRET_KEY
+                )
+                .toString(
+                  CryptoJS.enc.Utf8
+                )
+              }
 
             </div>
 
