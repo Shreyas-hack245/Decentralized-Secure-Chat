@@ -5,7 +5,7 @@ import Hero from "./components/Hero";
 import Chat from "./components/Chat";
 import Background from "./components/Background";
 import Footer from "./components/Footer";
-import Roadmap from "./components/Roadmap";
+
 import EncryptionStream from "./components/EncryptionStream";
 
 function App() {
@@ -32,9 +32,7 @@ function App() {
         <>
           <Hero connectWallet={connectWallet} />
           <EncryptionStream />
-          <div id="roadmap">
-            <Roadmap />
-          </div>
+
           <Footer />
         </>
       ) : (

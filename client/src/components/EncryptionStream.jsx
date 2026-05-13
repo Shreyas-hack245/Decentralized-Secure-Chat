@@ -9,56 +9,85 @@ function EncryptionStream() {
     const ctx = canvas.getContext("2d");
     
     let width = canvas.width = window.innerWidth;
-    let height = canvas.height = 300;
+    let height = canvas.height = 400;
 
-    const characters = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ🔐🔓🔗⚡";
-    const fontSize = 14;
-    const columns = width / fontSize;
-    const drops = [];
+    const nodes = [];
+    const nodeCount = 80;
+    const connectionDistance = 150;
 
-    for (let x = 0; x < columns; x++) {
-      drops[x] = 1;
+    class Node {
+      constructor() {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = (Math.random() - 0.5) * 1.5;
+        this.radius = Math.random() * 2 + 1;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < 0 || this.x > width) this.vx *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
+
+        // Mouse interaction
+        const dx = this.x - mouse.current.x;
+        const dy = this.y - mouse.current.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 100) {
+          const force = (100 - dist) / 1000;
+          this.vx += dx * force;
+          this.vy += dy * force;
+        }
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#00f2fe";
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < nodeCount; i++) {
+      nodes.push(new Node());
     }
 
     function draw() {
-      ctx.fillStyle = "rgba(10, 11, 16, 0.05)";
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "rgba(10, 11, 16, 0.1)";
       ctx.fillRect(0, 0, width, height);
 
-      for (let i = 0; i < drops.length; i++) {
-        const x = i * fontSize;
-        const y = drops[i] * fontSize;
+      nodes.forEach(node => {
+        node.update();
+        node.draw();
+      });
 
-        // Interaction: Change color near mouse
-        const dx = x - mouse.current.x;
-        const dy = y - mouse.current.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
 
-        if (dist < 100) {
-          ctx.fillStyle = "#fff";
-          ctx.font = (fontSize + 4) + "px Outfit";
-        } else {
-          ctx.fillStyle = "#00f2fe";
-          ctx.font = fontSize + "px Outfit";
+          if (dist < connectionDistance) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(0, 242, 254, ${1 - dist / connectionDistance})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
         }
-
-        const text = characters.charAt(Math.floor(Math.random() * characters.length));
-        ctx.fillText(text, x, y);
-
-        if (drops[i] * fontSize > height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-        drops[i]++;
       }
+      requestAnimationFrame(draw);
     }
 
-    const interval = setInterval(draw, 33);
+    const animationId = requestAnimationFrame(draw);
 
     const handleResize = () => {
       width = canvas.width = window.innerWidth;
-      const newColumns = width / fontSize;
-      if (newColumns > drops.length) {
-        for (let i = drops.length; i < newColumns; i++) drops[i] = 1;
-      }
+      height = canvas.height = 400;
     };
 
     const handleMouseMove = (e) => {
@@ -73,7 +102,7 @@ function EncryptionStream() {
     window.addEventListener("mousemove", handleMouseMove);
 
     return () => {
-      clearInterval(interval);
+      cancelAnimationFrame(animationId);
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
     };
@@ -82,14 +111,18 @@ function EncryptionStream() {
   return (
     <div className="encryption-stream-container">
       <div className="stream-overlay">
-        <h2>Global Security Heartbeat</h2>
-        <p>Your privacy is secured by a living network of decentralized nodes.</p>
+        <h2>Live Decentralized Security Mesh</h2>
+        <p>A resilient network of encrypted nodes protecting your digital presence in real-time.</p>
+        <div className="status-badge">
+          <span className="pulse"></span>
+          ACTIVE PROTECTION
+        </div>
       </div>
       <canvas ref={canvasRef} className="encryption-canvas" />
     </div>
-
   );
 }
 
 export default EncryptionStream;
+
 

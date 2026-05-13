@@ -26,6 +26,14 @@ function Chat({ disconnectWallet }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState("");
+  const [isCalling, setIsCalling] = useState(false);
+  const [callType, setCallType] = useState(null);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [settings, setSettings] = useState({
+    notifications: true,
+    darkMode: true,
+    privacyLock: false
+  });
   
   const [chats, setChats] = useState([
     { id: "global", name: "Secure Global Chat", lastMsg: "Welcome to the secure chat!", time: "12:00 PM", active: true, unread: 0 },
@@ -100,6 +108,31 @@ function Chat({ disconnectWallet }) {
 
   function handleFeatureAlert(name) {
     alert(`${name} is coming soon in Phase 2!`);
+  }
+
+  function startCall(type) {
+    setCallType(type);
+    setIsCalling(true);
+    setTimeout(() => {
+      setIsCalling(false);
+      alert(`${type} ended. (Simulation)`);
+    }, 5000);
+  }
+
+  function toggleSetting(key) {
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function handleAttachment() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        setMessage(`Shared a file: ${file.name}`);
+      }
+    };
+    input.click();
   }
 
   useEffect(() => {
@@ -181,6 +214,18 @@ function Chat({ disconnectWallet }) {
 
   return (
     <div className="chat-wrapper">
+      {isCalling && (
+        <div className="calling-overlay">
+          <div className="calling-card">
+            <div className="calling-avatar">{activeChat?.name[0]}</div>
+            <h2>{callType}...</h2>
+            <p>{activeChat?.name}</p>
+            <div className="calling-btns">
+              <button className="end-call-btn" onClick={() => setIsCalling(false)}>📞 End</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="sidebar">
         <div className="sidebar-header">
           <div className="profile-mini">
@@ -244,11 +289,20 @@ function Chat({ disconnectWallet }) {
           </div>
           <div className="chat-header-right">
              <div className="call-actions">
-                <button className="icon-btn" title="Video Call" onClick={() => handleFeatureAlert('Video Call')}>📹</button>
-                <button className="icon-btn" title="Voice Call" onClick={() => handleFeatureAlert('Voice Call')}>📞</button>
+                <button className="icon-btn" title="Video Call" onClick={() => startCall('Video Call')}>📹</button>
+                <button className="icon-btn" title="Voice Call" onClick={() => startCall('Voice Call')}>📞</button>
                 <div className="divider"></div>
                 <button className="icon-btn" title="Clear Chat" onClick={clearChat}>🗑️</button>
-                <button className="icon-btn" title="More Options" onClick={() => handleFeatureAlert('More Options')}>⋮</button>
+                <div className="more-options-container">
+                  <button className="icon-btn" title="More Options" onClick={() => setShowMoreOptions(!showMoreOptions)}>⋮</button>
+                  {showMoreOptions && (
+                    <div className="options-dropdown">
+                      <div className="option-item" onClick={() => { alert('Chat Exported'); setShowMoreOptions(false); }}>📤 Export Chat</div>
+                      <div className="option-item" onClick={() => { alert('Notifications Muted'); setShowMoreOptions(false); }}>🔕 Mute</div>
+                      <div className="option-item danger" onClick={() => { alert('Chat Blocked'); setShowMoreOptions(false); }}>🚫 Block</div>
+                    </div>
+                  )}
+                </div>
              </div>
           </div>
         </div>
@@ -284,7 +338,7 @@ function Chat({ disconnectWallet }) {
         <div className="message-input-area">
           <div className="input-actions">
             <button className="action-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
-            <button className="action-btn" onClick={() => handleFeatureAlert('Attachments')}>📎</button>
+            <button className="action-btn" onClick={handleAttachment}>📎</button>
           </div>
           <input
             type="text"
@@ -320,15 +374,15 @@ function Chat({ disconnectWallet }) {
               <div className="settings-list">
                  <div className="setting-item">
                     <span>🔔 Notifications</span>
-                    <input type="checkbox" defaultChecked />
+                    <input type="checkbox" checked={settings.notifications} onChange={() => toggleSetting('notifications')} />
                  </div>
                  <div className="setting-item">
                     <span>🌙 Dark Mode</span>
-                    <input type="checkbox" defaultChecked />
+                    <input type="checkbox" checked={settings.darkMode} onChange={() => toggleSetting('darkMode')} />
                  </div>
                  <div className="setting-item">
                     <span>🔒 Privacy Lock</span>
-                    <input type="checkbox" />
+                    <input type="checkbox" checked={settings.privacyLock} onChange={() => toggleSetting('privacyLock')} />
                  </div>
                  <div className="setting-item">
                     <span>🧹 Clear Cache</span>
