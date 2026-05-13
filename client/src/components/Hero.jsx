@@ -1,4 +1,18 @@
+import { useState } from "react";
+
 function Hero({ connectWallet }) {
+  const [isLocked, setIsLocked] = useState(true);
+
+  const handleLockClick = () => {
+    setIsLocked(!isLocked);
+    // Add a small delay then "re-lock" for effect or just leave it
+    if (isLocked) {
+      setTimeout(() => {
+        // Maybe trigger something cool here
+      }, 1000);
+    }
+  };
+
   return (
     <section className="hero">
       <div className="hero-content">
@@ -18,13 +32,18 @@ function Hero({ connectWallet }) {
           </button>
         </div>
       </div>
-      <div className="hero-visual">
-        <div className="floating-lock">🔐</div>
+      <div className="hero-visual" onClick={handleLockClick} style={{ cursor: 'pointer' }}>
+        <div className={`floating-lock ${!isLocked ? 'unlocked' : ''}`}>
+          {isLocked ? '🔐' : '🔓'}
+        </div>
+        {!isLocked && <div className="unlock-ripple"></div>}
         <div className="orb orb-1"></div>
         <div className="orb orb-2"></div>
+        {!isLocked && <div className="security-status">System Verified</div>}
       </div>
     </section>
   );
 }
 
-export default Hero;
+export default Hero;
+
