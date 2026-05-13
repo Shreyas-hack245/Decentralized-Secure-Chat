@@ -22,7 +22,10 @@ function Chat({ disconnectWallet }) {
   const [chatStarted, setChatStarted] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState("");
   
   const [chats, setChats] = useState([
     { id: "global", name: "Secure Global Chat", lastMsg: "Welcome to the secure chat!", time: "12:00 PM", active: true, unread: 0 },
@@ -67,9 +70,9 @@ function Chat({ disconnectWallet }) {
       socket.emit("send_message", messageData);
     }
     
-    // Update last message in chat list
     setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: message, time: messageData.time } : c));
     setMessage("");
+    socket.emit("stop_typing", { username, chat: activeChatId });
   }
 
   function deleteMessage(index) {
@@ -80,13 +83,18 @@ function Chat({ disconnectWallet }) {
         [activeChatId]: updatedMessages
       }));
 
-      // Update last message in sidebar if deleted message was the last one
-      if (index === messages.length - 1) {
-        const newLastMsg = updatedMessages.length > 0 
-          ? CryptoJS.AES.decrypt(updatedMessages[updatedMessages.length - 1].text, SECRET_KEY).toString(CryptoJS.enc.Utf8)
-          : "No messages yet";
-        setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: newLastMsg } : c));
-      }
+      // SYNC SIDEBAR: Update last message in sidebar if deleted message was the last one
+      const newLastMsg = updatedMessages.length > 0 
+        ? CryptoJS.AES.decrypt(updatedMessages[updatedMessages.length - 1].text, SECRET_KEY).toString(CryptoJS.enc.Utf8)
+        : "No messages yet";
+      setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: newLastMsg } : c));
+    }
+  }
+
+  function clearChat() {
+    if (window.confirm("Clear history for this chat?")) {
+      setChatMessages(prev => ({ ...prev, [activeChatId]: [] }));
+      setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: "No messages yet" } : c));
     }
   }
 
@@ -107,11 +115,35 @@ function Chat({ disconnectWallet }) {
       setOnlineUsers(count);
     });
 
+    socket.on("user_typing", (data) => {
+      if (data.chat === activeChatId && data.username !== username) {
+        setTypingUser(data.username);
+        setIsTyping(true);
+      }
+    });
+
+    socket.on("user_stop_typing", (data) => {
+      if (data.chat === activeChatId) {
+        setIsTyping(false);
+      }
+    });
+
     return () => {
       socket.off("receive_message");
       socket.off("online_users");
+      socket.off("user_typing");
+      socket.off("user_stop_typing");
     };
-  }, []);
+  }, [activeChatId, username]);
+
+  const handleTyping = (val) => {
+    setMessage(val);
+    if (val.length > 0) {
+      socket.emit("typing", { username, chat: activeChatId });
+    } else {
+      socket.emit("stop_typing", { username, chat: activeChatId });
+    }
+  }
 
   const filteredChats = chats.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -159,7 +191,7 @@ function Chat({ disconnectWallet }) {
             </div>
           </div>
           <div className="sidebar-actions">
-             <button className="icon-btn" onClick={() => setShowContactInfo(!showContactInfo)} title="Settings">⚙️</button>
+             <button className="icon-btn" onClick={() => setShowSettings(true)} title="Settings">⚙️</button>
              <button className="icon-btn" onClick={disconnectWallet} title="Logout">Logout</button>
           </div>
         </div>
@@ -207,7 +239,7 @@ function Chat({ disconnectWallet }) {
             <div className="avatar-small">{activeChat?.name[0]}</div>
             <div className="chat-main-info">
               <h3>{activeChat?.name}</h3>
-              <p>{activeChat?.id === 'global' ? `${onlineUsers} Users Online` : 'Click for contact info'}</p>
+              <p>{isTyping ? `${typingUser} is typing...` : (activeChat?.id === 'global' ? `${onlineUsers} Users Online` : 'Click for contact info')}</p>
             </div>
           </div>
           <div className="chat-header-right">
@@ -258,7 +290,7 @@ function Chat({ disconnectWallet }) {
             type="text"
             placeholder="Type a message..."
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => handleTyping(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
           />
           <button 
@@ -277,34 +309,57 @@ function Chat({ disconnectWallet }) {
         </div>
       </div>
 
-      {showContactInfo && (
+      {(showContactInfo || showSettings) && (
         <div className="contact-info-sidebar">
           <div className="sidebar-header">
-            <button className="icon-btn" onClick={() => setShowContactInfo(false)}>✕</button>
-            <span>Contact Info / Settings</span>
+            <button className="icon-btn" onClick={() => { setShowContactInfo(false); setShowSettings(false); }}>✕</button>
+            <span>{showSettings ? 'Settings' : 'Contact Info'}</span>
           </div>
           <div className="sidebar-body">
-            <div className="contact-profile">
-              <div className="avatar-large">{activeChat?.name[0]}</div>
-              <h2>{activeChat?.name}</h2>
-              <p>{activeChat?.id === 'global' ? 'Public Group' : '+1 234 567 890'}</p>
-            </div>
-            <div className="contact-section-item">
-               <h4>About</h4>
-               <p>SecureChat user. Privacy enthusiast.</p>
-            </div>
-            <div className="contact-section-item">
-               <h4>Media, Links and Docs</h4>
-               <div className="media-preview">
-                  <div className="media-box"></div>
-                  <div className="media-box"></div>
-                  <div className="media-box"></div>
-               </div>
-            </div>
-            <div className="contact-actions">
-               <button className="danger-btn" onClick={() => handleFeatureAlert('Block User')}>Block {activeChat?.name}</button>
-               <button className="danger-btn" onClick={() => handleFeatureAlert('Report User')}>Report {activeChat?.name}</button>
-            </div>
+            {showSettings ? (
+              <div className="settings-list">
+                 <div className="setting-item">
+                    <span>🔔 Notifications</span>
+                    <input type="checkbox" defaultChecked />
+                 </div>
+                 <div className="setting-item">
+                    <span>🌙 Dark Mode</span>
+                    <input type="checkbox" defaultChecked />
+                 </div>
+                 <div className="setting-item">
+                    <span>🔒 Privacy Lock</span>
+                    <input type="checkbox" />
+                 </div>
+                 <div className="setting-item">
+                    <span>🧹 Clear Cache</span>
+                    <button onClick={() => alert('Cache cleared!')}>Run</button>
+                 </div>
+              </div>
+            ) : (
+              <>
+                <div className="contact-profile">
+                  <div className="avatar-large">{activeChat?.name[0]}</div>
+                  <h2>{activeChat?.name}</h2>
+                  <p>{activeChat?.id === 'global' ? 'Public Group' : '+1 234 567 890'}</p>
+                </div>
+                <div className="contact-section-item">
+                   <h4>About</h4>
+                   <p>SecureChat user. Privacy enthusiast.</p>
+                </div>
+                <div className="contact-section-item">
+                   <h4>Media, Links and Docs</h4>
+                   <div className="media-preview">
+                      <div className="media-box"></div>
+                      <div className="media-box"></div>
+                      <div className="media-box"></div>
+                   </div>
+                </div>
+                <div className="contact-actions">
+                   <button className="danger-btn" onClick={() => handleFeatureAlert('Block User')}>Block {activeChat?.name}</button>
+                   <button className="danger-btn" onClick={() => handleFeatureAlert('Report User')}>Report {activeChat?.name}</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -313,6 +368,7 @@ function Chat({ disconnectWallet }) {
 }
 
 export default Chat;
+
 
 
 
