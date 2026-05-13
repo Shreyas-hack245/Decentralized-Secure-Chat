@@ -14,21 +14,17 @@ const Message = require("./models/Message");
 
 const app = express();
 
+let dbConnected = false;
 mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB Connected");
+    dbConnected = true;
+  })
+  .catch((err) => {
+    console.log("MongoDB Connection Error: ", err.message);
+    console.log("Running in offline mode (messages will not persist)");
+  });
 
-.then(() => {
-
-  console.log(
-    "MongoDB Connected"
-  );
-
-})
-
-.catch((err) => {
-
-  console.log(err);
-
-});
 
 app.use(cors());
 
@@ -53,48 +49,41 @@ io.on("connection", async (socket) => {
 
   console.log("User connected");
 
-  const oldMessages =
-    await Message.find().sort({
-      createdAt: 1,
-    });
-
-  socket.emit(
-    "load_messages",
-    oldMessages
-  );
-
-    socket.on("typing", (data) => {
-      socket.broadcast.emit("user_typing", data);
-    });
-
-    socket.on("stop_typing", (data) => {
-      socket.broadcast.emit("user_stop_typing", data);
-    });
-
-  socket.on(
-    "send_message",
-    async (data) => {
-
-      const newMessage =
-        new Message({
-
-          username:
-            data.username,
-
-          text:
-            data.text,
-
-        });
-
-      await newMessage.save();
-
-      socket.broadcast.emit(
-        "receive_message",
-        data
-      );
-
+  let oldMessages = [];
+  if (dbConnected) {
+    try {
+      oldMessages = await Message.find().sort({ createdAt: 1 });
+    } catch (e) {
+      console.log("Error loading messages: ", e.message);
     }
-  );
+  }
+
+  socket.emit("load_messages", oldMessages);
+
+  socket.on("typing", (data) => {
+    socket.broadcast.emit("user_typing", data);
+  });
+
+  socket.on("stop_typing", (data) => {
+    socket.broadcast.emit("user_stop_typing", data);
+  });
+
+  socket.on("send_message", async (data) => {
+    if (dbConnected) {
+      try {
+        const newMessage = new Message({
+          username: data.username,
+          text: data.text,
+        });
+        await newMessage.save();
+      } catch (e) {
+        console.log("Error saving message: ", e.message);
+      }
+    }
+
+    socket.broadcast.emit("receive_message", data);
+  });
+
 
   socket.on("disconnect", () => {
 

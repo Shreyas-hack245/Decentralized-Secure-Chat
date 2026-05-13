@@ -72,10 +72,26 @@ function Chat({ disconnectWallet }) {
     setMessage("");
   }
 
-  function clearChat() {
-    if (window.confirm("Clear history for this chat?")) {
-      setChatMessages(prev => ({ ...prev, [activeChatId]: [] }));
+  function deleteMessage(index) {
+    if (confirm("Delete this message?")) {
+      const updatedMessages = messages.filter((_, i) => i !== index);
+      setChatMessages(prev => ({
+        ...prev,
+        [activeChatId]: updatedMessages
+      }));
+
+      // Update last message in sidebar if deleted message was the last one
+      if (index === messages.length - 1) {
+        const newLastMsg = updatedMessages.length > 0 
+          ? CryptoJS.AES.decrypt(updatedMessages[updatedMessages.length - 1].text, SECRET_KEY).toString(CryptoJS.enc.Utf8)
+          : "No messages yet";
+        setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: newLastMsg } : c));
+      }
     }
+  }
+
+  function handleFeatureAlert(name) {
+    alert(`${name} is coming soon in Phase 2!`);
   }
 
   useEffect(() => {
@@ -84,6 +100,7 @@ function Chat({ disconnectWallet }) {
         ...prev,
         global: [...prev.global, { ...data, type: "received" }]
       }));
+      setChats(prev => prev.map(c => c.id === 'global' ? { ...c, lastMsg: CryptoJS.AES.decrypt(data.text, SECRET_KEY).toString(CryptoJS.enc.Utf8), time: data.time } : c));
     });
 
     socket.on("online_users", (count) => {
@@ -142,7 +159,7 @@ function Chat({ disconnectWallet }) {
             </div>
           </div>
           <div className="sidebar-actions">
-             <button className="icon-btn" title="Settings">⚙️</button>
+             <button className="icon-btn" onClick={() => setShowContactInfo(!showContactInfo)} title="Settings">⚙️</button>
              <button className="icon-btn" onClick={disconnectWallet} title="Logout">Logout</button>
           </div>
         </div>
@@ -195,11 +212,11 @@ function Chat({ disconnectWallet }) {
           </div>
           <div className="chat-header-right">
              <div className="call-actions">
-                <button className="icon-btn" title="Video Call">📹</button>
-                <button className="icon-btn" title="Voice Call">📞</button>
+                <button className="icon-btn" title="Video Call" onClick={() => handleFeatureAlert('Video Call')}>📹</button>
+                <button className="icon-btn" title="Voice Call" onClick={() => handleFeatureAlert('Voice Call')}>📞</button>
                 <div className="divider"></div>
                 <button className="icon-btn" title="Clear Chat" onClick={clearChat}>🗑️</button>
-                <button className="icon-btn" title="More Options">⋮</button>
+                <button className="icon-btn" title="More Options" onClick={() => handleFeatureAlert('More Options')}>⋮</button>
              </div>
           </div>
         </div>
@@ -218,14 +235,7 @@ function Chat({ disconnectWallet }) {
               )}
               <div className={`message-bubble ${msg.type}`}>
                 <div className="message-header-actions">
-                   <span className="msg-dropdown" onClick={() => {
-                     if (confirm("Delete this message?")) {
-                       setChatMessages(prev => ({
-                         ...prev,
-                         [activeChatId]: prev[activeChatId].filter((_, i) => i !== index)
-                       }));
-                     }
-                   }}>▼</span>
+                   <span className="msg-dropdown" onClick={() => deleteMessage(index)}>▼</span>
                 </div>
                 <p className="message-text">
                   {CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8)}
@@ -242,7 +252,7 @@ function Chat({ disconnectWallet }) {
         <div className="message-input-area">
           <div className="input-actions">
             <button className="action-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
-            <button className="action-btn">📎</button>
+            <button className="action-btn" onClick={() => handleFeatureAlert('Attachments')}>📎</button>
           </div>
           <input
             type="text"
@@ -271,7 +281,7 @@ function Chat({ disconnectWallet }) {
         <div className="contact-info-sidebar">
           <div className="sidebar-header">
             <button className="icon-btn" onClick={() => setShowContactInfo(false)}>✕</button>
-            <span>Contact Info</span>
+            <span>Contact Info / Settings</span>
           </div>
           <div className="sidebar-body">
             <div className="contact-profile">
@@ -292,8 +302,8 @@ function Chat({ disconnectWallet }) {
                </div>
             </div>
             <div className="contact-actions">
-               <button className="danger-btn">Block {activeChat?.name}</button>
-               <button className="danger-btn">Report {activeChat?.name}</button>
+               <button className="danger-btn" onClick={() => handleFeatureAlert('Block User')}>Block {activeChat?.name}</button>
+               <button className="danger-btn" onClick={() => handleFeatureAlert('Report User')}>Report {activeChat?.name}</button>
             </div>
           </div>
         </div>
@@ -303,5 +313,6 @@ function Chat({ disconnectWallet }) {
 }
 
 export default Chat;
+
 
 

@@ -20,6 +20,15 @@ function Hero({ connectWallet }) {
           Experience the next generation of decentralized messaging. No trackers, no central servers, just pure privacy.
         </p>
         
+        <div className="hero-btns">
+          <button className="connect-btn" onClick={connectWallet}>
+            Get Started for Free
+          </button>
+          <button className="secondary-btn">
+            Read Whitepaper
+          </button>
+        </div>
+
         <div className="hero-features-grid">
           {features.map((f, i) => (
             <div key={i} className="hero-feature-pill">
@@ -31,16 +40,8 @@ function Hero({ connectWallet }) {
             </div>
           ))}
         </div>
-
-        <div className="hero-btns">
-          <button className="connect-btn" onClick={connectWallet}>
-            Get Started for Free
-          </button>
-          <button className="secondary-btn">
-            Read Whitepaper
-          </button>
-        </div>
       </div>
+
       <div className="hero-visual" onClick={() => setIsLocked(!isLocked)} style={{ cursor: 'pointer' }}>
         <div className={`floating-lock ${!isLocked ? 'unlocked' : ''}`}>
           {isLocked ? '🔐' : '🔓'}

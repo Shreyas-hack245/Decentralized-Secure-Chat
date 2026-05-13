@@ -82,11 +82,12 @@ function EncryptionStream() {
   return (
     <div className="encryption-stream-container">
       <div className="stream-overlay">
-        <h2>Live Encryption Nodes</h2>
-        <p>Hover over the stream to interact with live data packets.</p>
+        <h2>Global Security Heartbeat</h2>
+        <p>Your privacy is secured by a living network of decentralized nodes.</p>
       </div>
       <canvas ref={canvasRef} className="encryption-canvas" />
     </div>
+
   );
 }
 

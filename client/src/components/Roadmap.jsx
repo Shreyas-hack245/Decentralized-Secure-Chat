@@ -2,9 +2,9 @@ function Roadmap() {
   const steps = [
     { phase: "Phase 1", title: "Protocol Launch", description: "Deployment of AES-256 E2EE core and decentralized identity layer.", status: "completed" },
     { phase: "Phase 2", title: "Multi-Platform Support", description: "Mobile apps for iOS and Android with biometric security.", status: "current" },
-    { phase: "Phase 3", title: "Group Governance", description: "Decentralized autonomous groups with voting and roles.", status: "upcoming" },
-    { phase: "Phase 4", title: "Global Expansion", description: "Peer-to-peer storage nodes and onion routing integration.", status: "upcoming" }
+    { phase: "Phase 3", title: "Group Governance", description: "Decentralized autonomous groups with voting and roles.", status: "upcoming" }
   ];
+
 
   return (
     <div className="roadmap-section">
