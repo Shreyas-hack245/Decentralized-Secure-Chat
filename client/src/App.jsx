@@ -8,6 +8,8 @@ import Background from "./components/Background";
 import Stats from "./components/Stats";
 import FAQ from "./components/FAQ";
 import Footer from "./components/Footer";
+import Roadmap from "./components/Roadmap";
+import Partners from "./components/Partners";
 
 function App() {
   const [walletConnected, setWalletConnected] = useState(false);
@@ -32,11 +34,15 @@ function App() {
       {!walletConnected ? (
         <>
           <Hero connectWallet={connectWallet} />
+          <Partners />
           <div id="features">
             <Features />
           </div>
           <div id="stats">
             <Stats />
+          </div>
+          <div id="roadmap">
+            <Roadmap />
           </div>
           <div id="faq">
             <FAQ />
@@ -50,4 +56,5 @@ function App() {
   );
 }
 
-export default App;
+export default App;
+

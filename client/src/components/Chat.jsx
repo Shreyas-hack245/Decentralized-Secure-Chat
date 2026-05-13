@@ -16,6 +16,7 @@ function Chat({ disconnectWallet }) {
   const [onlineUsers, setOnlineUsers] = useState(0);
   const [chatStarted, setChatStarted] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showContactInfo, setShowContactInfo] = useState(false);
 
   function joinChat() {
     if (username.trim() === "" || password.trim() === "") {
@@ -71,10 +72,10 @@ function Chat({ disconnectWallet }) {
   }, []);
 
   const [chats, setChats] = useState([
-    { id: "global", name: "Secure Global Chat", lastMsg: "Welcome to the secure chat!", time: "12:00 PM", active: true },
-    { id: "1", name: "Alice (E2EE)", lastMsg: "Hey, are we still on for the meeting?", time: "11:45 AM", active: false },
-    { id: "2", name: "Bob (E2EE)", lastMsg: "The encryption is working perfectly.", time: "11:30 AM", active: false },
-    { id: "3", name: "Crypto Group", lastMsg: "Check out the new protocol update.", time: "Yesterday", active: false },
+    { id: "global", name: "Secure Global Chat", lastMsg: "Welcome to the secure chat!", time: "12:00 PM", active: true, unread: 0 },
+    { id: "1", name: "Alice (E2EE)", lastMsg: "Hey, are we still on for the meeting?", time: "11:45 AM", active: false, unread: 2 },
+    { id: "2", name: "Bob (E2EE)", lastMsg: "The encryption is working perfectly.", time: "11:30 AM", active: false, unread: 0 },
+    { id: "3", name: "Crypto Group", lastMsg: "Check out the new protocol update.", time: "Yesterday", active: false, unread: 5 },
   ]);
 
   if (!chatStarted) {
@@ -106,6 +107,8 @@ function Chat({ disconnectWallet }) {
       </div>
     );
   }
+
+  const activeChat = chats.find(c => c.active);
 
   return (
     <div className="chat-wrapper">
@@ -146,7 +149,10 @@ function Chat({ disconnectWallet }) {
                   <span className="chat-name">{chat.name}</span>
                   <span className="chat-time">{chat.time}</span>
                 </div>
-                <div className="chat-last-msg">{chat.lastMsg}</div>
+                <div className="chat-item-bottom">
+                  <span className="chat-last-msg">{chat.lastMsg}</span>
+                  {chat.unread > 0 && <span className="unread-badge">{chat.unread}</span>}
+                </div>
               </div>
             </div>
           ))}
@@ -155,20 +161,25 @@ function Chat({ disconnectWallet }) {
 
       <div className="chat-section">
         <div className="chat-main-header">
-          <div className="chat-header-left">
-            <div className="avatar-small">{chats.find(c => c.active)?.name[0]}</div>
+          <div className="chat-header-left" onClick={() => setShowContactInfo(!showContactInfo)} style={{ cursor: 'pointer' }}>
+            <div className="avatar-small">{activeChat?.name[0]}</div>
             <div className="chat-main-info">
-              <h3>{chats.find(c => c.active)?.name}</h3>
-              <p>{chats.find(c => c.active)?.id === 'global' ? `${onlineUsers} Users Online` : 'Encrypted Session'}</p>
+              <h3>{activeChat?.name}</h3>
+              <p>{activeChat?.id === 'global' ? `${onlineUsers} Users Online` : 'Click for contact info'}</p>
             </div>
           </div>
           <div className="chat-header-right">
-             <button className="clear-btn" onClick={clearChat}>Clear History</button>
-             <span className="encryption-badge">🔒 E2EE</span>
+             <div className="call-actions">
+                <button className="icon-btn" title="Video Call">📹</button>
+                <button className="icon-btn" title="Voice Call">📞</button>
+                <div className="divider"></div>
+                <button className="icon-btn" title="Search Message">🔍</button>
+                <button className="icon-btn" title="More Options">⋮</button>
+             </div>
           </div>
         </div>
 
-        <div className="messages-area">
+        <div className="messages-area whatsapp-bg">
           <div className="encryption-notice">
              🛡️ Messages are end-to-end encrypted. No one outside of this chat, not even SecureChat, can read them.
           </div>
@@ -178,6 +189,9 @@ function Chat({ disconnectWallet }) {
                 <span className="message-user">{msg.username}</span>
               )}
               <div className={`message-bubble ${msg.type}`}>
+                <div className="message-header-actions">
+                   <span className="msg-dropdown">▼</span>
+                </div>
                 <p className="message-text">
                   {CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8)}
                 </p>
@@ -217,8 +231,41 @@ function Chat({ disconnectWallet }) {
           )}
         </div>
       </div>
+
+      {showContactInfo && (
+        <div className="contact-info-sidebar">
+          <div className="sidebar-header">
+            <button className="icon-btn" onClick={() => setShowContactInfo(false)}>✕</button>
+            <span>Contact Info</span>
+          </div>
+          <div className="sidebar-body">
+            <div className="contact-profile">
+              <div className="avatar-large">{activeChat?.name[0]}</div>
+              <h2>{activeChat?.name}</h2>
+              <p>{activeChat?.id === 'global' ? 'Public Group' : '+1 234 567 890'}</p>
+            </div>
+            <div className="contact-section-item">
+               <h4>About</h4>
+               <p>SecureChat user since 2024. Privacy enthusiast.</p>
+            </div>
+            <div className="contact-section-item">
+               <h4>Media, Links and Docs</h4>
+               <div className="media-preview">
+                  <div className="media-box"></div>
+                  <div className="media-box"></div>
+                  <div className="media-box"></div>
+               </div>
+            </div>
+            <div className="contact-actions">
+               <button className="danger-btn">Block {activeChat?.name}</button>
+               <button className="danger-btn">Report {activeChat?.name}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default Chat;
+export default Chat;
+

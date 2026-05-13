@@ -199,12 +199,102 @@
   left: 50px;
 }
 
-/* Features */
-.features {
+/* Partners Slider */
+.partners-section {
+  padding: 3rem 0;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+
+.partners-slider {
+  display: flex;
+  gap: 4rem;
+  width: max-content;
+  animation: scroll 30s linear infinite;
+}
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.partner-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  opacity: 0.6;
+  transition: 0.3s;
+}
+
+.partner-logo:hover {
+  opacity: 1;
+}
+
+.partner-icon {
+  font-size: 1.5rem;
+}
+
+.partner-name {
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* Roadmap */
+.roadmap-section {
   padding: 6rem 5%;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+}
+
+.roadmap-container {
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  padding-left: 2rem;
+  border-left: 2px solid var(--glass-border);
+}
+
+.roadmap-item {
+  position: relative;
+  margin-bottom: 4rem;
+}
+
+.roadmap-marker {
+  position: absolute;
+  left: -2.7rem;
+  top: 0.5rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  background: var(--secondary-bg);
+  border: 2px solid var(--glass-border);
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.roadmap-item.completed .roadmap-marker {
+  background: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.roadmap-item.current .roadmap-marker {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 10px var(--accent-color);
+}
+
+.roadmap-phase {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+.roadmap-content h3 {
+  margin: 0.5rem 0;
+}
+
+.roadmap-content p {
+  color: var(--text-secondary);
 }
 
 .card {
@@ -469,14 +559,136 @@
   border-left: 3px solid var(--accent-color);
 }
 
-.chat-item-info {
-  flex: 1;
+/* Chat Improvements */
+.unread-badge {
+  background: var(--success-color);
+  color: #000;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
 }
 
-.chat-item-top {
+.call-actions {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.3rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: var(--glass-border);
+  margin: 0 0.5rem;
+}
+
+.whatsapp-bg {
+  background-image: 
+    linear-gradient(rgba(10, 11, 16, 0.9), rgba(10, 11, 16, 0.9)),
+    url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+  background-size: contain;
+}
+
+.message-header-actions {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  opacity: 0;
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.message-bubble:hover .message-header-actions {
+  opacity: 1;
+}
+
+.msg-dropdown {
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+}
+
+/* Contact Info Sidebar */
+.contact-info-sidebar {
+  width: 350px;
+  background: var(--secondary-bg);
+  border-left: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-profile {
+  padding: 2rem;
+  text-align: center;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.avatar-large {
+  width: 150px;
+  height: 150px;
+  background: var(--accent-gradient);
+  border-radius: 50%;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  font-weight: 700;
+  color: #000;
+}
+
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.contact-section-item {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.contact-section-item h4 {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+
+.media-preview {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.media-box {
+  width: 80px;
+  height: 80px;
+  background: var(--glass-bg);
+  border-radius: 8px;
+}
+
+.contact-actions {
+  padding: 1.5rem;
+}
+
+.danger-btn {
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  color: #ff5252;
+  border: none;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+}
+
+.danger-btn:hover {
+  background: rgba(255, 82, 82, 0.05);
 }
 
 .chat-name {
