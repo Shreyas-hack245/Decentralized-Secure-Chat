@@ -12,11 +12,27 @@ function Chat({ disconnectWallet }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [chatMessages, setChatMessages] = useState({
+    global: [],
+    "1": [{ username: "Alice", text: CryptoJS.AES.encrypt("Hey, are we still on?", SECRET_KEY).toString(), type: "received", time: "11:45 AM" }],
+    "2": [{ username: "Bob", text: CryptoJS.AES.encrypt("Encryption works!", SECRET_KEY).toString(), type: "received", time: "11:30 AM" }],
+    "3": []
+  });
   const [onlineUsers, setOnlineUsers] = useState(0);
   const [chatStarted, setChatStarted] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showContactInfo, setShowContactInfo] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  const [chats, setChats] = useState([
+    { id: "global", name: "Secure Global Chat", lastMsg: "Welcome to the secure chat!", time: "12:00 PM", active: true, unread: 0 },
+    { id: "1", name: "Alice (E2EE)", lastMsg: "Hey, are we still on...", time: "11:45 AM", active: false, unread: 2 },
+    { id: "2", name: "Bob (E2EE)", lastMsg: "Encryption works!", time: "11:30 AM", active: false, unread: 0 },
+    { id: "3", name: "Crypto Group", lastMsg: "Check the update.", time: "Yesterday", active: false, unread: 5 },
+  ]);
+
+  const activeChatId = chats.find(c => c.active)?.id || "global";
+  const messages = chatMessages[activeChatId] || [];
 
   function joinChat() {
     if (username.trim() === "" || password.trim() === "") {
@@ -24,7 +40,7 @@ function Chat({ disconnectWallet }) {
       return;
     }
     if (password !== "secure123") {
-      alert("Wrong password");
+      alert("Wrong password (hint: secure123)");
       return;
     }
     setChatStarted(true);
@@ -42,23 +58,32 @@ function Chat({ disconnectWallet }) {
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    setMessages((prev) => [...prev, messageData]);
-    socket.emit("send_message", messageData);
+    setChatMessages(prev => ({
+      ...prev,
+      [activeChatId]: [...(prev[activeChatId] || []), messageData]
+    }));
+
+    if (activeChatId === "global") {
+      socket.emit("send_message", messageData);
+    }
+    
+    // Update last message in chat list
+    setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: message, time: messageData.time } : c));
     setMessage("");
   }
 
   function clearChat() {
-    if (window.confirm("Are you sure you want to clear all messages?")) {
-      setMessages([]);
+    if (window.confirm("Clear history for this chat?")) {
+      setChatMessages(prev => ({ ...prev, [activeChatId]: [] }));
     }
   }
 
   useEffect(() => {
     socket.on("receive_message", (data) => {
-      setMessages((prev) => [
+      setChatMessages((prev) => ({
         ...prev,
-        { ...data, type: "received" },
-      ]);
+        global: [...prev.global, { ...data, type: "received" }]
+      }));
     });
 
     socket.on("online_users", (count) => {
@@ -71,12 +96,7 @@ function Chat({ disconnectWallet }) {
     };
   }, []);
 
-  const [chats, setChats] = useState([
-    { id: "global", name: "Secure Global Chat", lastMsg: "Welcome to the secure chat!", time: "12:00 PM", active: true, unread: 0 },
-    { id: "1", name: "Alice (E2EE)", lastMsg: "Hey, are we still on for the meeting?", time: "11:45 AM", active: false, unread: 2 },
-    { id: "2", name: "Bob (E2EE)", lastMsg: "The encryption is working perfectly.", time: "11:30 AM", active: false, unread: 0 },
-    { id: "3", name: "Crypto Group", lastMsg: "Check out the new protocol update.", time: "Yesterday", active: false, unread: 5 },
-  ]);
+  const filteredChats = chats.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   if (!chatStarted) {
     return (
@@ -130,17 +150,22 @@ function Chat({ disconnectWallet }) {
         <div className="search-container">
           <div className="search-bar">
             <span>🔍</span>
-            <input type="text" placeholder="Search or start new chat" />
+            <input 
+              type="text" 
+              placeholder="Search or start new chat" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
 
         <div className="chat-list">
-          {chats.map((chat) => (
+          {filteredChats.map((chat) => (
             <div 
               key={chat.id} 
               className={`chat-item ${chat.active ? 'active' : ''}`}
               onClick={() => {
-                setChats(chats.map(c => ({ ...c, active: c.id === chat.id })));
+                setChats(chats.map(c => ({ ...c, active: c.id === chat.id, unread: c.id === chat.id ? 0 : c.unread })));
               }}
             >
               <div className="avatar-small">{chat.name[0]}</div>
@@ -173,7 +198,7 @@ function Chat({ disconnectWallet }) {
                 <button className="icon-btn" title="Video Call">📹</button>
                 <button className="icon-btn" title="Voice Call">📞</button>
                 <div className="divider"></div>
-                <button className="icon-btn" title="Search Message">🔍</button>
+                <button className="icon-btn" title="Clear Chat" onClick={clearChat}>🗑️</button>
                 <button className="icon-btn" title="More Options">⋮</button>
              </div>
           </div>
@@ -181,8 +206,11 @@ function Chat({ disconnectWallet }) {
 
         <div className="messages-area whatsapp-bg">
           <div className="encryption-notice">
-             🛡️ Messages are end-to-end encrypted. No one outside of this chat, not even SecureChat, can read them.
+             🛡️ Messages are end-to-end encrypted.
           </div>
+          {messages.length === 0 && (
+            <div className="empty-chat">No messages yet. Say hi! 👋</div>
+          )}
           {messages.map((msg, index) => (
             <div key={index} className={`message-group ${msg.type}`}>
                {msg.type === "received" && (
@@ -190,7 +218,14 @@ function Chat({ disconnectWallet }) {
               )}
               <div className={`message-bubble ${msg.type}`}>
                 <div className="message-header-actions">
-                   <span className="msg-dropdown">▼</span>
+                   <span className="msg-dropdown" onClick={() => {
+                     if (confirm("Delete this message?")) {
+                       setChatMessages(prev => ({
+                         ...prev,
+                         [activeChatId]: prev[activeChatId].filter((_, i) => i !== index)
+                       }));
+                     }
+                   }}>▼</span>
                 </div>
                 <p className="message-text">
                   {CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8)}
@@ -246,7 +281,7 @@ function Chat({ disconnectWallet }) {
             </div>
             <div className="contact-section-item">
                <h4>About</h4>
-               <p>SecureChat user since 2024. Privacy enthusiast.</p>
+               <p>SecureChat user. Privacy enthusiast.</p>
             </div>
             <div className="contact-section-item">
                <h4>Media, Links and Docs</h4>
@@ -268,4 +303,5 @@ function Chat({ disconnectWallet }) {
 }
 
 export default Chat;
+
 
