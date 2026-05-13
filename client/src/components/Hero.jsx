@@ -12,7 +12,10 @@ function Hero({ connectWallet }) {
   return (
     <section className="hero">
       <div className="hero-content">
-        <div className="badge">New: AES-256 Protocol v2.0</div>
+        <div className="badge">
+          <span className="pulse-mini"></span>
+          Decentralized Protocol Live
+        </div>
         <h1 className="title">
           Privacy is not a <span className="highlight">Privilege</span>, it's a <span className="highlight">Right</span>.
         </h1>
@@ -49,12 +52,15 @@ function Hero({ connectWallet }) {
         {!isLocked && <div className="unlock-ripple"></div>}
         <div className="orb orb-1"></div>
         <div className="orb orb-2"></div>
-        {!isLocked && <div className="security-status">System Verified</div>}
+        <div className={`security-status-indicator ${!isLocked ? 'verified' : ''}`}>
+           {isLocked ? '🔒 Encrypted' : '✅ Verified'}
+        </div>
       </div>
     </section>
   );
 }
 
 export default Hero;
+
 
 
