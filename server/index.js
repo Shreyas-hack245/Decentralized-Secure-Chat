@@ -63,6 +63,14 @@ io.on("connection", async (socket) => {
     oldMessages
   );
 
+    socket.on("typing", (data) => {
+      socket.broadcast.emit("user_typing", data);
+    });
+
+    socket.on("stop_typing", (data) => {
+      socket.broadcast.emit("user_stop_typing", data);
+    });
+
   socket.on(
     "send_message",
     async (data) => {
