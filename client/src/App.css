@@ -89,12 +89,41 @@ body {
   box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.4);
 }
 
-.connect-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 30px -10px rgba(124, 58, 237, 0.6);
+.card {
+  width: 320px;
+  padding: 30px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  transition: all 0.4s ease;
+  text-align: left;
 }
 
-/* CHAT LAYOUT */
+.card:hover {
+  transform: translateY(-10px);
+  background: rgba(15, 23, 42, 0.6);
+  border-color: var(--accent-blue);
+  box-shadow: 0 20px 40px -15px rgba(56, 189, 248, 0.2);
+}
+
+.card-icon {
+  font-size: 40px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.card h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.card p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 15px;
+}
 .chat-wrapper {
   width: 100vw;
   height: calc(100vh - 64px);

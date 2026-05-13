@@ -1,7 +1,7 @@
 function Navbar() {
   return (
     <nav className="navbar">
-      <h2>SecureChat</h2>
+      <h2><span style={{ marginRight: '8px' }}>🔐</span>SecureChat</h2>
     </nav>
   );
 }

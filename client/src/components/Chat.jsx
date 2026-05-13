@@ -216,10 +216,10 @@ function Chat() {
 
       <div className="chat-section">
         <div className="chat-main-header">
-          <div className="avatar-small">G</div>
+          <div className="avatar-small">{chats.find(c => c.active)?.name[0]}</div>
           <div className="chat-main-info">
-            <h3>Secure Global Chat</h3>
-            <p>{onlineUsers} Users Online</p>
+            <h3>{chats.find(c => c.active)?.name}</h3>
+            <p>{chats.find(c => c.active)?.id === 'global' ? `${onlineUsers} Users Online` : 'Encrypted Session'}</p>
           </div>
         </div>
 
