@@ -140,221 +140,125 @@ function Chat() {
 
   }, []);
 
+  const [chats, setChats] = useState([
+    { id: "global", name: "Secure Global Chat", lastMsg: "Welcome to the secure chat!", time: "12:00 PM", active: true },
+    { id: "1", name: "Alice (E2EE)", lastMsg: "Hey, are we still on for the meeting?", time: "11:45 AM", active: false },
+    { id: "2", name: "Bob (E2EE)", lastMsg: "The encryption is working perfectly.", time: "11:30 AM", active: false },
+    { id: "3", name: "Crypto Group", lastMsg: "Check out the new protocol update.", time: "Yesterday", active: false },
+  ]);
+
   if (!chatStarted) {
-
     return (
-
       <div className="join-page">
-
         <div className="join-card">
-
-          <h1>
-            Secure Login
-          </h1>
-
-          <p>
-            Access encrypted messaging
-          </p>
-
+          <h1>Secure Login</h1>
+          <p>Access your encrypted messaging dashboard</p>
           <input
             type="text"
-            placeholder="Enter username"
+            placeholder="Username"
             value={username}
-            onChange={(e) =>
-              setUsername(
-                e.target.value
-              )
-            }
+            onChange={(e) => setUsername(e.target.value)}
           />
-
           <input
             type="password"
-            placeholder="Enter password"
+            placeholder="Password"
             value={password}
-            onChange={(e) =>
-              setPassword(
-                e.target.value
-              )
-            }
+            onChange={(e) => setPassword(e.target.value)}
           />
-
-          <button
-            onClick={joinChat}
-          >
-
-            Join Secure Chat
-
-          </button>
-
+          <button onClick={joinChat}>Join Secure Chat</button>
         </div>
-
       </div>
-
     );
   }
 
   return (
-
     <div className="chat-wrapper">
-
       <div className="sidebar">
-
-        <div className="profile">
-
-          <div className="avatar">
-
-            {username[0]}
-
+        <div className="sidebar-header">
+          <div className="profile-mini">
+            <div className="avatar-small">{username[0]?.toUpperCase()}</div>
           </div>
-
-          <div>
-
-            <h3>
-              {username}
-            </h3>
-
-            <p>
-              Online
-            </p>
-
+          <div className="sidebar-actions">
+            {/* Icons could go here */}
+            <span>💬</span>
+            <span>⋮</span>
           </div>
-
         </div>
 
-        <div className="privacy-card">
-
-          <h3>
-            🔐 Secure Messaging
-          </h3>
-
-          <p>
-
-            AES-256 encryption enabled
-            for all messages.
-
-          </p>
-
+        <div className="search-container">
+          <div className="search-bar">
+            <span>🔍</span>
+            <input type="text" placeholder="Search or start new chat" />
+          </div>
         </div>
 
+        <div className="chat-list">
+          {chats.map((chat) => (
+            <div 
+              key={chat.id} 
+              className={`chat-item ${chat.active ? 'active' : ''}`}
+              onClick={() => {
+                setChats(chats.map(c => ({ ...c, active: c.id === chat.id })));
+              }}
+            >
+              <div className="avatar-small">{chat.name[0]}</div>
+              <div className="chat-item-info">
+                <div className="chat-item-top">
+                  <span className="chat-name">{chat.name}</span>
+                  <span className="chat-time">{chat.time}</span>
+                </div>
+                <div className="chat-last-msg">{chat.lastMsg}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="chat-section">
-
-        <div className="security-banner">
-
-          🔐 AES-256 End-to-End Encryption Active
-
-        </div>
-
-        <div className="chat-header">
-
-          <h2>
-            Secure Global Chat
-          </h2>
-
-          <p>
-
-            {onlineUsers}
-            {" "}
-            Users Online
-
-          </p>
-
+        <div className="chat-main-header">
+          <div className="avatar-small">G</div>
+          <div className="chat-main-info">
+            <h3>Secure Global Chat</h3>
+            <p>{onlineUsers} Users Online</p>
+          </div>
         </div>
 
         <div className="messages-area">
-
-          {
-
-            messages.map(
-              (msg, index) => (
-
-              <div
-                key={index}
-                className={`message-bubble ${msg.type}`}
-              >
-
-                <strong className="message-user">
-
-                  {msg.username}
-
-                </strong>
-
-                <p className="message-text">
-
-                  {
-
-                    CryptoJS.AES.decrypt(
-                      msg.text,
-                      SECRET_KEY
-                    )
-                    .toString(
-                      CryptoJS.enc.Utf8
-                    )
-
-                  }
-
-                </p>
-
-                <div className="message-footer">
-
-                  <span className="message-time">
-
-                    {msg.time}
-
-                  </span>
-
-                  {
-
-                    msg.type === "sent" && (
-
-                      <span className="message-status">
-
-                        ✓✓
-
-                      </span>
-
-                    )
-
-                  }
-
-                </div>
-
+          {messages.map((msg, index) => (
+            <div key={index} className={`message-bubble ${msg.type}`}>
+              {msg.type === "received" && (
+                <span className="message-user">{msg.username}</span>
+              )}
+              <p className="message-text">
+                {CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8)}
+              </p>
+              <div className="message-footer">
+                <span className="message-time">{msg.time}</span>
+                {msg.type === "sent" && <span className="message-status">✓✓</span>}
               </div>
-
-            ))
-
-          }
-
+            </div>
+          ))}
         </div>
 
         <div className="message-input-area">
-
+          <span style={{ cursor: 'pointer' }}>😊</span>
+          <span style={{ cursor: 'pointer' }}>📎</span>
           <input
             type="text"
-            placeholder="Type your message..."
+            placeholder="Type a message"
             value={message}
-            onChange={(e) =>
-              setMessage(
-                e.target.value
-              )
-            }
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
           />
-
-          <button
+          <button 
+            className={`send-btn ${message.trim() ? 'active' : ''}`} 
             onClick={sendMessage}
           >
-
-            Send
-
+            ➤
           </button>
-
         </div>
-
       </div>
-
     </div>
-
   );
 }
 
