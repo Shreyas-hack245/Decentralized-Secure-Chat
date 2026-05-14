@@ -1611,3 +1611,277 @@
   --secondary-bg: #050608;
   --glass-bg: rgba(255, 255, 255, 0.02);
 }
+
+/* Calling System Phase 3 */
+.calling-overlay {
+  background: rgba(5, 6, 8, 0.95);
+  backdrop-filter: blur(20px);
+}
+
+.calling-card {
+  padding: 4rem 3rem;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.calling-status-pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--accent-gradient);
+  animation: calling-pulse 2s infinite;
+}
+
+@keyframes calling-pulse {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.calling-username {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 1rem;
+}
+
+.call-timer {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 2rem;
+  margin: 2rem 0;
+  letter-spacing: 2px;
+  color: var(--accent-color);
+}
+
+.end-call-btn {
+  background: #ff5252;
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  border: none;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0 auto;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 0 20px rgba(255, 82, 82, 0.3);
+}
+
+.end-call-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 40px rgba(255, 82, 82, 0.5);
+}
+
+.midnight {
+  --primary-bg: #000;
+  --secondary-bg: #050608;
+  --glass-bg: rgba(255, 255, 255, 0.02);
+}
+
+/* Premium Settings UI */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.settings-group {
+  margin-bottom: 2rem;
+}
+
+.settings-group-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+  margin-left: 0.5rem;
+  font-weight: 700;
+}
+
+.setting-item-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  transition: 0.3s;
+}
+
+.setting-item-premium:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.setting-label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-weight: 500;
+}
+
+.setting-icon {
+  font-size: 1.2rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+/* Custom Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+input:checked + .slider {
+  background: var(--accent-gradient);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+  background-color: #000;
+}
+
+.theme-btn, .clear-btn-small {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.theme-btn:hover, .clear-btn-small:hover {
+  background: var(--accent-color);
+  color: #000;
+  border-color: var(--accent-color);
+}
+
+/* Emoji Picker Enhancements */
+.emoji-mini-picker {
+  background: rgba(10, 11, 16, 0.95) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--accent-color) !important;
+  padding: 1rem !important;
+  width: 250px;
+  display: grid !important;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem !important;
+}
+
+/* Privacy Lock Screen */
+.lock-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #050608;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lock-card {
+  text-align: center;
+  animation: scaleIn 0.5s ease-out;
+}
+
+.lock-card h2 {
+  margin: 1.5rem 0;
+  font-size: 2rem;
+}
+
+.lock-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  padding: 1rem;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1.2rem;
+  text-align: center;
+  width: 200px;
+  margin-bottom: 1.5rem;
+  letter-spacing: 5px;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Profile Edit UI */
+.status-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.status-edit input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  padding: 0.8rem;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.status-edit input:focus {
+  border-color: var(--accent-color);
+  outline: none;
+}
+
+.edit-hint {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}

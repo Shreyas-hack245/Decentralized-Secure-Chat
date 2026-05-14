@@ -46,6 +46,9 @@ function Chat({ disconnectWallet }) {
   const [callTimer, setCallTimer] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [autoDelete, setAutoDelete] = useState(false);
+  const [userProfile, setUserProfile] = useState({ status: "SecureChat user. Privacy enthusiast." });
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockPin, setLockPin] = useState("");
   const callIntervalRef = useRef(null);
 
   const activeChatId = chats.find(c => c.active)?.id || "global";
@@ -62,6 +65,7 @@ function Chat({ disconnectWallet }) {
     }
     setChatStarted(true);
     socket.emit("get_chats", username.trim());
+    socket.emit("get_user_data", username.trim());
     socket.emit("get_messages", "global");
   }
 
@@ -155,7 +159,38 @@ function Chat({ disconnectWallet }) {
   }
 
   function toggleSetting(key) {
-    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    if (key === 'privacyLock' && !settings.privacyLock) {
+       alert("Privacy lock enabled! PIN is 1234");
+    }
+    const newSettings = { ...settings, [key]: !settings[key] };
+    setSettings(newSettings);
+    socket.emit("update_settings", { username, settings: newSettings });
+  }
+
+  function clearCache() {
+    if (window.confirm("Are you sure you want to clear all local data? This will log you out.")) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  }
+
+  function handleLock() {
+    if (lockPin === "1234") {
+      setIsLocked(false);
+      setLockPin("");
+    } else {
+      alert("Incorrect PIN (Hint: 1234)");
+    }
+  }
+
+  function toggleTheme(theme) {
+     if (theme === 'midnight') {
+        document.body.classList.toggle('midnight');
+     } else {
+        setSettings(prev => ({ ...prev, darkMode: !prev.darkMode }));
+        document.body.classList.toggle('light-mode'); // Optional: implement light mode
+     }
+  }));
   }
 
   function handleAttachment() {
@@ -188,6 +223,18 @@ function Chat({ disconnectWallet }) {
     setNewChatName("");
     setShowNewChatModal(false);
   }
+
+  useEffect(() => {
+    socket.on("load_user_data", (data) => {
+      if (data) {
+        setUserProfile({ status: data.status });
+        if (data.settings) {
+          setSettings(data.settings);
+          setAutoDelete(data.settings.autoDelete || false);
+        }
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (autoDelete) {
@@ -340,8 +387,37 @@ function Chat({ disconnectWallet }) {
 
   const activeChat = chats.find(c => c.active);
 
+  
+  useEffect(() => {
+    if (settings.privacyLock) {
+       setIsLocked(true);
+    }
+  }, [settings.privacyLock]);
+
   return (
     <div className="chat-wrapper">
+      
+      {settings.privacyLock && isLocked && (
+        <div className="lock-screen">
+          <div className="lock-card">
+            <div className="avatar-large">🔐</div>
+            <h2>SecureChat Locked</h2>
+            <p>Enter your 4-digit PIN to continue</p>
+            <input 
+              type="password" 
+              className="lock-input" 
+              maxLength="4"
+              placeholder="••••"
+              value={lockPin}
+              onChange={(e) => setLockPin(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleLock()}
+            />
+            <br />
+            <button className="primary-btn" onClick={handleLock}>Unlock</button>
+          </div>
+        </div>
+      )}
+
       {isCalling && (
         <div className="calling-overlay">
           <div className="calling-card glass-morphism">
@@ -490,7 +566,7 @@ function Chat({ disconnectWallet }) {
           </button>
           {showEmojiPicker && (
             <div className="emoji-mini-picker">
-              {['❤️', '👍', '😂', '🔥', '🚀', '🔒'].map(emoji => (
+              {['❤️', '👍', '😂', '🔥', '🚀', '🔒', '👋', '✨', '💎', '🎉', '💻', '🔐', '📱', '💬', '🌈', '⚡', '🤖', '👾'].map(emoji => (
                 <span key={emoji} onClick={() => { setMessage(prev => prev + emoji); setShowEmojiPicker(false); }}>{emoji}</span>
               ))}
             </div>
@@ -505,31 +581,73 @@ function Chat({ disconnectWallet }) {
             <span>{showSettings ? 'Settings' : 'Contact Info'}</span>
           </div>
           <div className="sidebar-body">
+            
             {showSettings ? (
               <div className="settings-list">
-                 <div className="setting-item">
-                    <span>🔔 Notifications</span>
-                    <input type="checkbox" checked={settings.notifications} onChange={() => toggleSetting('notifications')} />
+                 <div className="settings-group">
+                    <div className="settings-group-title">Account & Security</div>
+                    <div className="setting-item-premium">
+                       <div className="setting-label">
+                          <span className="setting-icon">🔔</span>
+                          <span>Notifications</span>
+                       </div>
+                       <label className="switch">
+                          <input type="checkbox" checked={settings.notifications} onChange={() => toggleSetting('notifications')} />
+                          <span className="slider"></span>
+                       </label>
+                    </div>
+                    <div className="setting-item-premium">
+                       <div className="setting-label">
+                          <span className="setting-icon">🔒</span>
+                          <span>Privacy Lock</span>
+                       </div>
+                       <label className="switch">
+                          <input type="checkbox" checked={settings.privacyLock} onChange={() => toggleSetting('privacyLock')} />
+                          <span className="slider"></span>
+                       </label>
+                    </div>
+                    <div className="setting-item-premium">
+                       <div className="setting-label">
+                          <span className="setting-icon">🗑️</span>
+                          <span>Auto-delete</span>
+                       </div>
+                       <label className="switch">
+                          <input type="checkbox" checked={autoDelete} onChange={() => setAutoDelete(!autoDelete)} />
+                          <span className="slider"></span>
+                       </label>
+                    </div>
                  </div>
-                 <div className="setting-item">
-                    <span>🌙 Dark Mode</span>
-                    <input type="checkbox" checked={settings.darkMode} onChange={() => toggleSetting('darkMode')} />
+
+                 <div className="settings-group">
+                    <div className="settings-group-title">Appearance</div>
+                    <div className="setting-item-premium">
+                       <div className="setting-label">
+                          <span className="setting-icon">🌙</span>
+                          <span>Dark Mode</span>
+                       </div>
+                       <label className="switch">
+                          <input type="checkbox" checked={settings.darkMode} onChange={() => toggleTheme('dark')} />
+                          <span className="slider"></span>
+                       </label>
+                    </div>
+                    <div className="setting-item-premium">
+                       <div className="setting-label">
+                          <span className="setting-icon">🎨</span>
+                          <span>Midnight Theme</span>
+                       </div>
+                       <button className="theme-btn" onClick={() => toggleTheme('midnight')}>Toggle</button>
+                    </div>
                  </div>
-                 <div className="setting-item">
-                    <span>🔒 Privacy Lock</span>
-                    <input type="checkbox" checked={settings.privacyLock} onChange={() => toggleSetting('privacyLock')} />
-                  </div>
-                  <div className="setting-item">
-                    <span>🗑️ Auto-delete messages</span>
-                    <input type="checkbox" checked={autoDelete} onChange={() => setAutoDelete(!autoDelete)} />
-                  </div>
-                  <div className="setting-item">
-                    <span>🎨 Midnight Theme</span>
-                    <button className="theme-btn" onClick={() => document.body.classList.toggle('midnight')}>Toggle</button>
-                  </div>
-                 <div className="setting-item">
-                    <span>🧹 Clear Cache</span>
-                    <button onClick={() => alert('Cache cleared!')}>Run</button>
+
+                 <div className="settings-group">
+                    <div className="settings-group-title">System</div>
+                    <div className="setting-item-premium">
+                       <div className="setting-label">
+                          <span className="setting-icon">🧹</span>
+                          <span>Cache</span>
+                       </div>
+                       <button className="clear-btn-small" onClick={clearCache}>Clear Data</button>
+                    </div>
                  </div>
               </div>
             ) : (
@@ -541,7 +659,19 @@ function Chat({ disconnectWallet }) {
                 </div>
                 <div className="contact-section-item">
                    <h4>About</h4>
-                   <p>SecureChat user. Privacy enthusiast.</p>
+                   {activeChat?.name === username ? (
+                     <div className="status-edit">
+                        <input 
+                          type="text" 
+                          value={userProfile.status} 
+                          onChange={(e) => setUserProfile({ status: e.target.value })}
+                          onBlur={() => socket.emit("update_profile", { username, status: userProfile.status })}
+                        />
+                        <span className="edit-hint">Click outside to save</span>
+                     </div>
+                   ) : (
+                     <p>{activeChat?.id === 'global' ? 'Public Group' : userProfile.status}</p>
+                   )}
                 </div>
                 <div className="contact-section-item">
                    <h4>Media, Links and Docs</h4>

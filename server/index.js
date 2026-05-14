@@ -12,6 +12,7 @@ const mongoose = require("mongoose");
 
 const Message = require("./models/Message");
 const Chat = require("./models/Chat");
+const User = require("./models/User");
 
 const app = express();
 
@@ -123,6 +124,48 @@ io.on("connection", async (socket) => {
         // Broadcast to participants if online? For now just save.
       } catch (e) {
         console.log("Error creating chat: ", e.message);
+      }
+    }
+  });
+
+  socket.on("get_user_data", async (username) => {
+    if (dbConnected) {
+      try {
+        let user = await User.findOne({ username });
+        if (!user) {
+          // Create new user on first login
+          user = new User({ username });
+          await user.save();
+        }
+        socket.emit("load_user_data", user);
+      } catch (e) {
+        console.log("Error fetching user data: ", e.message);
+      }
+    }
+  });
+
+  socket.on("update_settings", async (data) => {
+    if (dbConnected) {
+      try {
+        await User.findOneAndUpdate(
+          { username: data.username },
+          { settings: data.settings }
+        );
+      } catch (e) {
+        console.log("Error updating settings: ", e.message);
+      }
+    }
+  });
+
+  socket.on("update_profile", async (data) => {
+    if (dbConnected) {
+      try {
+        await User.findOneAndUpdate(
+          { username: data.username },
+          { status: data.status }
+        );
+      } catch (e) {
+        console.log("Error updating profile: ", e.message);
       }
     }
   });
