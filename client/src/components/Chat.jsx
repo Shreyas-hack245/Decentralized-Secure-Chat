@@ -510,7 +510,8 @@ function Chat({ disconnectWallet }) {
                      <p>Updated for group conversations</p>
                   </div>
                </div>
-            </div>
+               <div className="status-item">
+                  <div className="status-avatar update">🛡️</div>
                   <div className="status-info">
                      <h4>My Security Pulse</h4>
                      <p>Encrypted & Secure</p>

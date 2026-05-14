@@ -113,24 +113,6 @@ io.on("connection", async (socket) => {
     }
   });
 
-  socket.on("create_chat", async (chatData) => {
-    if (dbConnected) {
-      try {
-        const newChat = new Chat({
-          id: chatData.id,
-          name: chatData.name,
-          participants: chatData.participants,
-          lastMsg: chatData.lastMsg || "No messages yet",
-          time: chatData.time || "Just now"
-        });
-        await newChat.save();
-        // Broadcast to participants if online? For now just save.
-      } catch (e) {
-        console.log("Error creating chat: ", e.message);
-      }
-    }
-  });
-
   socket.on("get_user_data", async (username) => {
     if (dbConnected) {
       try {
@@ -141,10 +123,51 @@ io.on("connection", async (socket) => {
           await user.save();
         }
         socket.emit("load_user_data", user);
+        // Map socket id to username for real-time signaling
+        socket.join(username); 
       } catch (e) {
         console.log("Error fetching user data: ", e.message);
       }
     }
+  });
+
+  socket.on("search_users", async (query) => {
+    if (dbConnected) {
+      try {
+        const users = await User.find({ username: { $regex: query, $options: "i" } }).limit(5);
+        socket.emit("search_results", users.map(u => u.username));
+      } catch (e) {
+        console.log("Error searching users: ", e.message);
+      }
+    }
+  });
+
+  socket.on("create_chat", async (chatData) => {
+    if (dbConnected) {
+      try {
+        const existingChat = await Chat.findOne({ id: chatData.id });
+        if (!existingChat) {
+          const newChat = new Chat(chatData);
+          await newChat.save();
+        }
+        // Notify all participants
+        chatData.participants.forEach(p => {
+          io.to(p).emit("new_chat_available", chatData);
+        });
+      } catch (e) {
+        console.log("Error creating chat: ", e.message);
+      }
+    }
+  });
+
+  socket.on("initiate_call", (data) => {
+    // data: { from, to, type }
+    io.to(data.to).emit("incoming_call", data);
+  });
+
+  socket.on("respond_call", (data) => {
+    // data: { from, to, accepted }
+    io.to(data.to).emit("call_response", data);
   });
 
   socket.on("update_settings", async (data) => {
