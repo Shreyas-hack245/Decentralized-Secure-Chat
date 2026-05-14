@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import io from "socket.io-client";
 
@@ -43,6 +43,10 @@ function Chat({ disconnectWallet }) {
   ]);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [newChatName, setNewChatName] = useState("");
+  const [callTimer, setCallTimer] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [autoDelete, setAutoDelete] = useState(false);
+  const callIntervalRef = useRef(null);
 
   const activeChatId = chats.find(c => c.active)?.id || "global";
   const messages = chatMessages[activeChatId] || [];
@@ -121,10 +125,33 @@ function Chat({ disconnectWallet }) {
   function startCall(type) {
     setCallType(type);
     setIsCalling(true);
+    setCallTimer(0);
+    if (callIntervalRef.current) clearInterval(callIntervalRef.current);
+    callIntervalRef.current = setInterval(() => {
+      setCallTimer(prev => prev + 1);
+    }, 1000);
+    
+    // Auto end after 30s
     setTimeout(() => {
-      setIsCalling(false);
-      alert(`${type} ended. (Simulation)`);
-    }, 5000);
+      endCall();
+    }, 30000);
+  }
+
+  function endCall() {
+    if (callIntervalRef.current) clearInterval(callIntervalRef.current);
+    setIsCalling(false);
+    setCallTimer(0);
+  }
+
+  function exportChat() {
+    const chatContent = messages.map(m => `[${m.time}] ${m.username}: ${CryptoJS.AES.decrypt(m.text, SECRET_KEY).toString(CryptoJS.enc.Utf8)}`).join('\n');
+    const blob = new Blob([chatContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat_export_${activeChatId}.txt`;
+    a.click();
+    setShowMoreOptions(false);
   }
 
   function toggleSetting(key) {
@@ -161,6 +188,25 @@ function Chat({ disconnectWallet }) {
     setNewChatName("");
     setShowNewChatModal(false);
   }
+
+  useEffect(() => {
+    if (autoDelete) {
+      const timer = setInterval(() => {
+        setChatMessages(prev => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach(chatId => {
+             // Keep only messages from last 60 seconds
+             // (In a real app, we'd check timestamps)
+             if (updated[chatId].length > 5) {
+                updated[chatId] = updated[chatId].slice(-5);
+             }
+          });
+          return updated;
+        });
+      }, 10000);
+      return () => clearInterval(timer);
+    }
+  }, [autoDelete]);
 
   useEffect(() => {
     socket.on("receive_message", (data) => {
@@ -298,12 +344,17 @@ function Chat({ disconnectWallet }) {
     <div className="chat-wrapper">
       {isCalling && (
         <div className="calling-overlay">
-          <div className="calling-card">
-            <div className="calling-avatar">{activeChat?.name[0]}</div>
-            <h2>{callType}...</h2>
-            <p>{activeChat?.name}</p>
+          <div className="calling-card glass-morphism">
+            <div className="calling-status-pulse"></div>
+            <div className="avatar-large">{activeChat?.name[0]}</div>
+            <h2>{callType}</h2>
+            <p className="calling-username">{activeChat?.name}</p>
+            <div className="call-timer">{Math.floor(callTimer / 60)}:{String(callTimer % 60).padStart(2, '0')}</div>
             <div className="calling-btns">
-              <button className="end-call-btn" onClick={() => setIsCalling(false)}>📞 End</button>
+              <button className="end-call-btn" onClick={endCall}>
+                <span className="icon">📞</span>
+                End Call
+              </button>
             </div>
           </div>
         </div>
@@ -381,8 +432,8 @@ function Chat({ disconnectWallet }) {
                   <button className="icon-btn" title="More Options" onClick={() => setShowMoreOptions(!showMoreOptions)}>⋮</button>
                   {showMoreOptions && (
                     <div className="options-dropdown">
-                      <div className="option-item" onClick={() => { alert('Chat Exported'); setShowMoreOptions(false); }}>📤 Export Chat</div>
-                      <div className="option-item" onClick={() => { alert('Notifications Muted'); setShowMoreOptions(false); }}>🔕 Mute</div>
+                      <div className="option-item" onClick={exportChat}>📤 Export Chat (.txt)</div>
+                      <div className="option-item" onClick={() => { setIsMuted(!isMuted); setShowMoreOptions(false); }}>{isMuted ? '🔊 Unmute' : '🔕 Mute'}</div>
                       <div className="option-item danger" onClick={() => { alert('Chat Blocked'); setShowMoreOptions(false); }}>🚫 Block</div>
                     </div>
                   )}
@@ -467,7 +518,15 @@ function Chat({ disconnectWallet }) {
                  <div className="setting-item">
                     <span>🔒 Privacy Lock</span>
                     <input type="checkbox" checked={settings.privacyLock} onChange={() => toggleSetting('privacyLock')} />
-                 </div>
+                  </div>
+                  <div className="setting-item">
+                    <span>🗑️ Auto-delete messages</span>
+                    <input type="checkbox" checked={autoDelete} onChange={() => setAutoDelete(!autoDelete)} />
+                  </div>
+                  <div className="setting-item">
+                    <span>🎨 Midnight Theme</span>
+                    <button className="theme-btn" onClick={() => document.body.classList.toggle('midnight')}>Toggle</button>
+                  </div>
                  <div className="setting-item">
                     <span>🧹 Clear Cache</span>
                     <button onClick={() => alert('Cache cleared!')}>Run</button>
