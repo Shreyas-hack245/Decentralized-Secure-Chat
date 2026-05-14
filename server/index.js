@@ -71,12 +71,15 @@ io.on("connection", async (socket) => {
 
   console.log("User connected");
 
-  let oldMessages = [];
+  socket.emit("server_status", { dbConnected });
+  
   if (dbConnected) {
     try {
-      oldMessages = await Message.find().sort({ createdAt: 1 });
+      // Send global chat history on connection
+      const globalHistory = await Message.find({ chatId: "global" }).sort({ createdAt: 1 });
+      socket.emit("load_messages", { chatId: "global", messages: globalHistory });
     } catch (e) {
-      console.log("Error loading messages: ", e.message);
+      console.log("Error loading global messages: ", e.message);
     }
   }
 

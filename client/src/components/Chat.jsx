@@ -46,6 +46,7 @@ function Chat({ disconnectWallet }) {
   const [callTimer, setCallTimer] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [autoDelete, setAutoDelete] = useState(false);
+  const [activeTab, setActiveTab] = useState("chats"); // chats, status
   const [userProfile, setUserProfile] = useState({ status: "SecureChat user. Privacy enthusiast." });
   const [isLocked, setIsLocked] = useState(false);
   const [lockPin, setLockPin] = useState("");
@@ -190,7 +191,6 @@ function Chat({ disconnectWallet }) {
         setSettings(prev => ({ ...prev, darkMode: !prev.darkMode }));
         document.body.classList.toggle('light-mode'); // Optional: implement light mode
      }
-  }));
   }
 
   function handleAttachment() {
@@ -251,152 +251,8 @@ function Chat({ disconnectWallet }) {
           return updated;
         });
       }, 10000);
-      return () => clearInterval(timer);
-    }
-  }, [autoDelete]);
-
-  useEffect(() => {
-    socket.on("receive_message", (data) => {
-      const targetChatId = data.chatId || "global";
-      setChatMessages((prev) => ({
-        ...prev,
-        [targetChatId]: [...(prev[targetChatId] || []), { ...data, type: data.username === username ? "sent" : "received" }]
-      }));
-      
-      setChats(prev => prev.map(c => c.id === targetChatId ? { 
-        ...c, 
-        lastMsg: CryptoJS.AES.decrypt(data.text, SECRET_KEY).toString(CryptoJS.enc.Utf8), 
-        time: data.time,
-        unread: (targetChatId !== activeChatId && data.username !== username) ? (c.unread + 1) : c.unread
-      } : c));
-    });
-
-    socket.on("load_messages", (data) => {
-      if (Array.isArray(data)) {
-        // Initial load (legacy or global)
-        setChatMessages(prev => ({
-          ...prev,
-          global: data.map(m => ({ ...m, type: m.username === username ? "sent" : "received" }))
-        }));
-      } else {
-        // Targeted load for a chatId
-        setChatMessages(prev => ({
-          ...prev,
-          [data.chatId]: data.messages.map(m => ({ ...m, type: m.username === username ? "sent" : "received" }))
-        }));
-      }
-    });
-
-    socket.on("load_chats", (data) => {
-      if (data && data.length > 0) {
-        setChats(prev => {
-          // Merge persistent chats with existing ones (avoid duplicates)
-          const persistentIds = data.map(c => c.id);
-          const filteredExisting = prev.filter(c => !persistentIds.includes(c.id));
-          return [...filteredExisting, ...data.map(c => ({ ...c, active: c.id === activeChatId }))];
-        });
-        
-        // Load messages for each chat
-        data.forEach(chat => {
-          socket.emit("get_messages", chat.id);
-        });
-      }
-    });
-
-    socket.on("online_users", (count) => {
-      setOnlineUsers(count);
-    });
-
-    socket.on("user_typing", (data) => {
-      if (data.chat === activeChatId && data.username !== username) {
-        setTypingUser(data.username);
-        setIsTyping(true);
-      }
-    });
-
-    socket.on("user_stop_typing", (data) => {
-      if (data.chat === activeChatId) {
-        setIsTyping(false);
-      }
-    });
-
-    return () => {
-      socket.off("receive_message");
-      socket.off("online_users");
-      socket.off("user_typing");
-      socket.off("user_stop_typing");
-    };
-  }, [activeChatId, username]);
-
-  const handleTyping = (val) => {
-    setMessage(val);
-    if (val.length > 0) {
-      socket.emit("typing", { username, chat: activeChatId });
-    } else {
-      socket.emit("stop_typing", { username, chat: activeChatId });
-    }
-  }
-
-  const filteredChats = chats.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
-
-  if (!chatStarted) {
-    return (
-      <div className="join-page">
-        <div className="glass-morphism login-card">
-          <div className="login-header">
-            <div className="login-lock-icon">🔐</div>
-            <h1>Secure Login</h1>
-            <p>Your privacy, protected by end-to-end encryption</p>
-          </div>
-          <div className="login-body">
-            <div className="input-field">
-              <label>Username</label>
-              <input
-                type="text"
-                placeholder="e.g. Satoshi"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-            <div className="input-field">
-              <label>Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div className="login-help">
-              <span>Hint: secure123</span>
-            </div>
-          </div>
-          <div className="login-footer">
-            <button className="primary-btn login-submit" onClick={joinChat}>
-              Enter Secure Space
-              <span className="btn-glow"></span>
-            </button>
-            <button className="text-btn logout-action" onClick={disconnectWallet}>
-              Back to Landing
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const activeChat = chats.find(c => c.active);
-
-  
-  useEffect(() => {
-    if (settings.privacyLock) {
-       setIsLocked(true);
-    }
-  }, [settings.privacyLock]);
-
-  return (
+        return (
     <div className="chat-wrapper">
-      
       {settings.privacyLock && isLocked && (
         <div className="lock-screen">
           <div className="lock-card">
@@ -435,8 +291,84 @@ function Chat({ disconnectWallet }) {
           </div>
         </div>
       )}
+
       <div className="sidebar">
         <div className="sidebar-header">
+          <div className="sidebar-tabs">
+            <button className={`tab-btn ${activeTab === 'chats' ? 'active' : ''}`} onClick={() => setActiveTab('chats')}>Chats</button>
+            <button className={`tab-btn ${activeTab === 'status' ? 'active' : ''}`} onClick={() => setActiveTab('status')}>Updates</button>
+          </div>
+          <button className="icon-btn" title="New Chat" onClick={() => setShowNewChatModal(true)}>+</button>
+        </div>
+
+        <div className="sidebar-content">
+          {activeTab === 'chats' ? (
+            <>
+              <div className="search-container">
+                <input 
+                  type="text" 
+                  className="search-bar" 
+                  placeholder="Search chats..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="chat-list">
+                {filteredChats.map((chat) => (
+                  <div 
+                    key={chat.id} 
+                    className={`chat-item ${chat.active ? 'active' : ''}`}
+                    onClick={() => {
+                      setChats(chats.map(c => ({ ...c, active: c.id === chat.id })));
+                      if (chat.id !== activeChatId) {
+                        socket.emit("get_messages", chat.id);
+                      }
+                    }}
+                  >
+                    <div className="chat-avatar">{chat.name[0]}</div>
+                    <div className="chat-info">
+                      <div className="chat-name-row">
+                        <span className="chat-name">{chat.name}</span>
+                        <span className="chat-time">{chat.time}</span>
+                      </div>
+                      <div className="chat-last-msg">
+                        {chat.lastMsg}
+                        {chat.unread > 0 && <span className="unread-badge">{chat.unread}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="status-list">
+               <div className="status-item-mine">
+                  <div className="status-avatar pulse">🛡️</div>
+                  <div className="status-info">
+                     <h4>My Security Pulse</h4>
+                     <p>Encrypted & Secure</p>
+                  </div>
+               </div>
+               <div className="status-group-title">Recent Updates</div>
+               <div className="status-item">
+                  <div className="status-avatar update">✨</div>
+                  <div className="status-info">
+                     <h4>Node v2.4.0</h4>
+                     <p>Optimized packet delivery</p>
+                  </div>
+               </div>
+               <div className="status-item">
+                  <div className="status-avatar update">🔐</div>
+                  <div className="status-info">
+                     <h4>E2EE Kernel</h4>
+                     <p>Zero-knowledge proof updated</p>
+                  </div>
+               </div>
+            </div>
+          )}
+        </div>
+
+        <div className="sidebar-footer">
           <div className="profile-mini">
             <div className="avatar-small">{username[0]?.toUpperCase()}</div>
             <div className="profile-info">
@@ -445,94 +377,54 @@ function Chat({ disconnectWallet }) {
             </div>
           </div>
           <div className="sidebar-actions">
-             <button className="icon-btn" onClick={() => setShowSettings(true)} title="Settings">⚙️</button>
-             <button className="icon-btn" onClick={disconnectWallet} title="Logout">Logout</button>
+            <button className="icon-btn" onClick={() => setShowSettings(true)} title="Settings">⚙️</button>
+            <button className="icon-btn" onClick={disconnectWallet} title="Logout">Logout</button>
           </div>
-        </div>
-
-        <div className="search-container">
-          <div className="search-bar">
-            <span>🔍</span>
-            <input 
-              type="text" 
-              placeholder="Search or start new chat" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button className="add-chat-btn" onClick={() => setShowNewChatModal(true)}>+</button>
-          </div>
-        </div>
-
-        <div className="chat-list">
-          {filteredChats.map((chat) => (
-            <div 
-              key={chat.id} 
-              className={`chat-item ${chat.active ? 'active' : ''}`}
-              onClick={() => {
-                setChats(chats.map(c => ({ ...c, active: c.id === chat.id, unread: c.id === chat.id ? 0 : c.unread })));
-                socket.emit("get_messages", chat.id);
-              }}
-            >
-              <div className="avatar-small">{chat.name[0]}</div>
-              <div className="chat-item-info">
-                <div className="chat-item-top">
-                  <span className="chat-name">{chat.name}</span>
-                  <span className="chat-time">{chat.time}</span>
-                </div>
-                <div className="chat-item-bottom">
-                  <span className="chat-last-msg">{chat.lastMsg}</span>
-                  {chat.unread > 0 && <span className="unread-badge">{chat.unread}</span>}
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
-      <div className="chat-section">
-        <div className="chat-main-header">
-          <div className="chat-header-left" onClick={() => setShowContactInfo(!showContactInfo)} style={{ cursor: 'pointer' }}>
+      <div className="chat-area">
+        <div className="chat-header">
+          <div className="chat-header-info" onClick={() => setShowContactInfo(true)}>
             <div className="avatar-small">{activeChat?.name[0]}</div>
-            <div className="chat-main-info">
+            <div className="chat-header-text">
               <h3>{activeChat?.name}</h3>
-              <p>{isTyping ? `${typingUser} is typing...` : (activeChat?.id === 'global' ? `${onlineUsers} Users Online` : 'Click for contact info')}</p>
+              <p>{isTyping ? `${typingUser} is typing...` : 'online'}</p>
             </div>
           </div>
-          <div className="chat-header-right">
-             <div className="call-actions">
-                <button className="icon-btn" title="Video Call" onClick={() => startCall('Video Call')}>📹</button>
-                <button className="icon-btn" title="Voice Call" onClick={() => startCall('Voice Call')}>📞</button>
-                <div className="divider"></div>
-                <button className="icon-btn" title="Clear Chat" onClick={clearChat}>🗑️</button>
-                <div className="more-options-container">
-                  <button className="icon-btn" title="More Options" onClick={() => setShowMoreOptions(!showMoreOptions)}>⋮</button>
-                  {showMoreOptions && (
-                    <div className="options-dropdown">
-                      <div className="option-item" onClick={exportChat}>📤 Export Chat (.txt)</div>
-                      <div className="option-item" onClick={() => { setIsMuted(!isMuted); setShowMoreOptions(false); }}>{isMuted ? '🔊 Unmute' : '🔕 Mute'}</div>
-                      <div className="option-item danger" onClick={() => { alert('Chat Blocked'); setShowMoreOptions(false); }}>🚫 Block</div>
-                    </div>
-                  )}
+          <div className="chat-header-actions">
+            <button className="icon-btn" title="Video Call" onClick={() => startCall('Video Call')}>📹</button>
+            <button className="icon-btn" title="Voice Call" onClick={() => startCall('Voice Call')}>📞</button>
+            <div className="divider"></div>
+            <button className="icon-btn" title="Clear Chat" onClick={clearChat}>🗑️</button>
+            <div className="more-options-container">
+              <button className="icon-btn" title="More Options" onClick={() => setShowMoreOptions(!showMoreOptions)}>⋮</button>
+              {showMoreOptions && (
+                <div className="options-dropdown">
+                  <div className="option-item" onClick={exportChat}>📤 Export Chat (.txt)</div>
+                  <div className="option-item" onClick={() => { setIsMuted(!isMuted); setShowMoreOptions(false); }}>{isMuted ? '🔊 Unmute' : '🔕 Mute'}</div>
+                  <div className="option-item danger" onClick={() => { alert('Chat Blocked'); setShowMoreOptions(false); }}>🚫 Block</div>
                 </div>
-             </div>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="messages-area whatsapp-bg">
           <div className="encryption-notice">
-             🛡️ Messages are end-to-end encrypted.
+            🛡️ Messages are end-to-end encrypted.
           </div>
           {messages.length === 0 && (
             <div className="empty-chat">No messages yet. Say hi! 👋</div>
           )}
           {messages.map((msg, index) => (
             <div key={index} className={`message-group ${msg.type}`}>
-               {msg.type === "received" && (
+              {msg.type === "received" && (
                 <span className="message-user">{msg.username}</span>
               )}
               <div className={`message-bubble ${msg.type}`}>
                 <div className="message-header-actions">
-                   <span className="msg-dropdown" onClick={() => deleteMessage(index)}>▼</span>
+                  <span className="msg-dropdown" onClick={() => deleteMessage(index)}>▼</span>
                 </div>
                 <p className="message-text">
                   {CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8)}
@@ -551,8 +443,8 @@ function Chat({ disconnectWallet }) {
             <button className="action-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
             <button className="action-btn" onClick={handleAttachment}>📎</button>
           </div>
-          <input
-            type="text"
+          <input 
+            type="text" 
             placeholder="Type a message..."
             value={message}
             onChange={(e) => handleTyping(e.target.value)}
@@ -581,7 +473,6 @@ function Chat({ disconnectWallet }) {
             <span>{showSettings ? 'Settings' : 'Contact Info'}</span>
           </div>
           <div className="sidebar-body">
-            
             {showSettings ? (
               <div className="settings-list">
                  <div className="settings-group">
@@ -690,6 +581,7 @@ function Chat({ disconnectWallet }) {
           </div>
         </div>
       )}
+
       {showNewChatModal && (
         <div className="modal-overlay">
           <div className="glass-morphism modal-content">
