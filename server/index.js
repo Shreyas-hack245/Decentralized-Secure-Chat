@@ -11,6 +11,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 
 const Message = require("./models/Message");
+const Chat = require("./models/Chat");
 
 const app = express();
 
@@ -19,11 +20,31 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB Connected");
     dbConnected = true;
+    ensureGlobalChat();
   })
   .catch((err) => {
     console.log("MongoDB Connection Error: ", err.message);
     console.log("Running in offline mode (messages will not persist)");
   });
+
+async function ensureGlobalChat() {
+  try {
+    const globalChat = await Chat.findOne({ id: "global" });
+    if (!globalChat) {
+      const newChat = new Chat({
+        id: "global",
+        name: "Secure Global Chat",
+        participants: [],
+        lastMsg: "Welcome to the secure chat!",
+        time: "12:00 PM"
+      });
+      await newChat.save();
+      console.log("Global Chat Created");
+    }
+  } catch (e) {
+    console.log("Error ensuring global chat: ", e.message);
+  }
+}
 
 
 app.use(cors());
@@ -67,6 +88,41 @@ io.on("connection", async (socket) => {
         socket.emit("load_messages", { chatId, messages: chatHistory });
       } catch (e) {
         console.log("Error fetching chat history: ", e.message);
+      }
+    }
+  });
+
+  socket.on("get_chats", async (username) => {
+    if (dbConnected) {
+      try {
+        // Fetch chats where the user is a participant OR the "global" chat
+        const userChats = await Chat.find({
+          $or: [
+            { participants: username },
+            { id: "global" }
+          ]
+        });
+        socket.emit("load_chats", userChats);
+      } catch (e) {
+        console.log("Error fetching chats: ", e.message);
+      }
+    }
+  });
+
+  socket.on("create_chat", async (chatData) => {
+    if (dbConnected) {
+      try {
+        const newChat = new Chat({
+          id: chatData.id,
+          name: chatData.name,
+          participants: chatData.participants,
+          lastMsg: chatData.lastMsg || "No messages yet",
+          time: chatData.time || "Just now"
+        });
+        await newChat.save();
+        // Broadcast to participants if online? For now just save.
+      } catch (e) {
+        console.log("Error creating chat: ", e.message);
       }
     }
   });

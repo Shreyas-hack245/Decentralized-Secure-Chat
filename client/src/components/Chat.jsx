@@ -57,6 +57,8 @@ function Chat({ disconnectWallet }) {
       return;
     }
     setChatStarted(true);
+    socket.emit("get_chats", username.trim());
+    socket.emit("get_messages", "global");
   }
 
   function sendMessage() {
@@ -143,16 +145,19 @@ function Chat({ disconnectWallet }) {
 
   function createNewChat() {
     if (newChatName.trim() === "") return;
+    const newChatId = Date.now().toString();
     const newChat = {
-      id: Date.now().toString(),
+      id: newChatId,
       name: newChatName,
       lastMsg: "No messages yet",
       time: "Just now",
       active: true,
-      unread: 0
+      unread: 0,
+      participants: [username]
     };
     setChats(prev => prev.map(c => ({ ...c, active: false })).concat(newChat));
     setChatMessages(prev => ({ ...prev, [newChat.id]: [] }));
+    socket.emit("create_chat", newChat);
     setNewChatName("");
     setShowNewChatModal(false);
   }
@@ -186,6 +191,22 @@ function Chat({ disconnectWallet }) {
           ...prev,
           [data.chatId]: data.messages.map(m => ({ ...m, type: m.username === username ? "sent" : "received" }))
         }));
+      }
+    });
+
+    socket.on("load_chats", (data) => {
+      if (data && data.length > 0) {
+        setChats(prev => {
+          // Merge persistent chats with existing ones (avoid duplicates)
+          const persistentIds = data.map(c => c.id);
+          const filteredExisting = prev.filter(c => !persistentIds.includes(c.id));
+          return [...filteredExisting, ...data.map(c => ({ ...c, active: c.id === activeChatId }))];
+        });
+        
+        // Load messages for each chat
+        data.forEach(chat => {
+          socket.emit("get_messages", chat.id);
+        });
       }
     });
 
