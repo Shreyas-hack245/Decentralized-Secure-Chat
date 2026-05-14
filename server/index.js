@@ -83,8 +83,6 @@ io.on("connection", async (socket) => {
     }
   }
 
-  socket.emit("load_messages", oldMessages);
-
   socket.on("get_messages", async (chatId) => {
     if (dbConnected) {
       try {

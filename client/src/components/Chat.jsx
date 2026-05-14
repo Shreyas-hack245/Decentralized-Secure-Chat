@@ -412,7 +412,7 @@ function Chat({ disconnectWallet }) {
         <div className="calling-overlay">
           <div className="calling-card glass-morphism">
             <div className="calling-status-pulse"></div>
-            <div className="avatar-large">{activeChat?.name[0]}</div>
+            <div className="avatar-large">{activeChat?.name?.[0]}</div>
             <h2>{callType}</h2>
             <p className="calling-username">{activeChat?.name}</p>
             <div className="call-timer">{Math.floor(callTimer / 60)}:{String(callTimer % 60).padStart(2, '0')}</div>
@@ -459,7 +459,7 @@ function Chat({ disconnectWallet }) {
                       }
                     }}
                   >
-                    <div className="chat-avatar">{chat.name[0]}</div>
+                    <div className="chat-avatar">{chat.name?.[0]}</div>
                     <div className="chat-info">
                       <div className="chat-name-row">
                         <span className="chat-name">{chat.name}</span>
@@ -554,7 +554,7 @@ function Chat({ disconnectWallet }) {
       <div className="chat-area">
         <div className="chat-header">
           <div className="chat-header-info" onClick={() => setShowContactInfo(true)}>
-            <div className="avatar-small">{activeChat?.name[0]}</div>
+            <div className="avatar-small">{activeChat?.name?.[0]}</div>
             <div className="chat-header-text">
               <h3>{activeChat?.name}</h3>
               <p>{isTyping ? `${typingUser} is typing...` : 'online'}</p>
@@ -712,7 +712,7 @@ function Chat({ disconnectWallet }) {
             ) : (
               <>
                 <div className="contact-profile">
-                  <div className="avatar-large">{activeChat?.name[0]}</div>
+                  <div className="avatar-large">{activeChat?.name?.[0]}</div>
                   <h2>{activeChat?.name}</h2>
                   <p>{activeChat?.id === 'global' ? 'Public Group' : '+1 234 567 890'}</p>
                 </div>
