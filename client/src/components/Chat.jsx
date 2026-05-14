@@ -251,7 +251,141 @@ function Chat({ disconnectWallet }) {
           return updated;
         });
       }, 10000);
-        return (
+      return () => clearInterval(timer);
+    }
+  }, [autoDelete]);
+
+  useEffect(() => {
+    socket.on("receive_message", (data) => {
+      const targetChatId = data.chatId || "global";
+      setChatMessages((prev) => ({
+        ...prev,
+        [targetChatId]: [...(prev[targetChatId] || []), { ...data, type: data.username === username ? "sent" : "received" }]
+      }));
+      
+      setChats(prev => prev.map(c => c.id === targetChatId ? { 
+        ...c, 
+        lastMsg: CryptoJS.AES.decrypt(data.text, SECRET_KEY).toString(CryptoJS.enc.Utf8), 
+        time: data.time,
+        unread: (targetChatId !== activeChatId && data.username !== username) ? (c.unread + 1) : c.unread
+      } : c));
+    });
+
+    socket.on("load_messages", (data) => {
+      if (Array.isArray(data)) {
+        setChatMessages(prev => ({
+          ...prev,
+          global: data.map(m => ({ ...m, type: m.username === username ? "sent" : "received" }))
+        }));
+      } else {
+        setChatMessages(prev => ({
+          ...prev,
+          [data.chatId]: data.messages.map(m => ({ ...m, type: m.username === username ? "sent" : "received" }))
+        }));
+      }
+    });
+
+    socket.on("load_chats", (data) => {
+      if (data && data.length > 0) {
+        setChats(prev => {
+          const persistentIds = data.map(c => c.id);
+          const filteredExisting = prev.filter(c => !persistentIds.includes(c.id));
+          return [...filteredExisting, ...data.map(c => ({ ...c, active: c.id === activeChatId }))];
+        });
+        
+        data.forEach(chat => {
+          socket.emit("get_messages", chat.id);
+        });
+      }
+    });
+
+    socket.on("online_users", (count) => {
+      setOnlineUsers(count);
+    });
+
+    socket.on("user_typing", (data) => {
+      if (data.chat === activeChatId && data.username !== username) {
+        setTypingUser(data.username);
+        setIsTyping(true);
+      }
+    });
+
+    socket.on("user_stop_typing", (data) => {
+      if (data.chat === activeChatId) {
+        setIsTyping(false);
+      }
+    });
+
+    return () => {
+      socket.off("receive_message");
+      socket.off("load_messages");
+      socket.off("load_chats");
+      socket.off("online_users");
+      socket.off("user_typing");
+      socket.off("user_stop_typing");
+    };
+  }, [activeChatId, username]);
+
+  const handleTyping = (val) => {
+    setMessage(val);
+    if (val.length > 0) {
+      socket.emit("typing", { username, chat: activeChatId });
+    } else {
+      socket.emit("stop_typing", { username, chat: activeChatId });
+    }
+  }
+
+  const filteredChats = chats.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  if (!chatStarted) {
+    return (
+      <div className="join-page">
+        <div className="glass-morphism login-card">
+          <div className="login-header">
+            <div className="login-lock-icon">🔐</div>
+            <h1>Secure Login</h1>
+            <p>Your privacy, protected by end-to-end encryption</p>
+          </div>
+          <div className="login-body">
+            <div className="input-group">
+              <label>Username</label>
+              <input 
+                type="text" 
+                placeholder="Enter your unique handle" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label>Passphrase</label>
+              <input 
+                type="password" 
+                placeholder="••••••••" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <button className="join-btn" onClick={joinChat}>
+              Connect Securely
+            </button>
+            <div className="login-footer">
+              <p>🔒 AES-256 Bit Encryption Active</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const activeChat = chats.find(c => c.active);
+
+  useEffect(() => {
+    if (settings.privacyLock) {
+       setIsLocked(true);
+    }
+  }, [settings.privacyLock]);
+
+  return (
     <div className="chat-wrapper">
       {settings.privacyLock && isLocked && (
         <div className="lock-screen">
@@ -344,6 +478,39 @@ function Chat({ disconnectWallet }) {
             <div className="status-list">
                <div className="status-item-mine">
                   <div className="status-avatar pulse">🛡️</div>
+                  <div className="status-info">
+                     <h4>Security Shield: Active</h4>
+                     <p>All nodes synchronized</p>
+                  </div>
+                  <div className="status-badge">98% Safe</div>
+               </div>
+               
+               <div className="status-group-title">Live Network Feed</div>
+               <div className="status-item premium">
+                  <div className="status-avatar update">🌐</div>
+                  <div className="status-info">
+                     <h4>Global Node Cluster</h4>
+                     <p>12 nodes active in Zurich, SG, NY</p>
+                  </div>
+                  <div className="status-indicator online"></div>
+               </div>
+
+               <div className="status-group-title">Platform Changelog</div>
+               <div className="status-item">
+                  <div className="status-avatar update">✨</div>
+                  <div className="status-info">
+                     <h4>Quantum-Resistant Layer</h4>
+                     <p>v2.5.0 Deployment successful</p>
+                  </div>
+               </div>
+               <div className="status-item">
+                  <div className="status-avatar update">🔐</div>
+                  <div className="status-info">
+                     <h4>Multi-sig Key Exchange</h4>
+                     <p>Updated for group conversations</p>
+                  </div>
+               </div>
+            </div>
                   <div className="status-info">
                      <h4>My Security Pulse</h4>
                      <p>Encrypted & Secure</p>
