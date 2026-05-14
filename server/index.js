@@ -103,7 +103,7 @@ io.on("connection", async (socket) => {
             { participants: username },
             { id: "global" }
           ]
-        });
+        }) || [];
         socket.emit("load_chats", userChats);
       } catch (e) {
         console.log("Error fetching chats: ", e.message);
@@ -149,9 +149,11 @@ io.on("connection", async (socket) => {
           await newChat.save();
         }
         // Notify all participants
-        chatData.participants.forEach(p => {
-          io.to(p).emit("new_chat_available", chatData);
-        });
+        if (chatData && Array.isArray(chatData.participants)) {
+          chatData.participants.forEach(p => {
+            io.to(p).emit("new_chat_available", chatData);
+          });
+        }
       } catch (e) {
         console.log("Error creating chat: ", e.message);
       }

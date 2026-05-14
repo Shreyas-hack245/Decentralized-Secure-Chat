@@ -277,7 +277,7 @@ function Chat({ disconnectWallet }) {
           ...prev,
           global: data.map(m => ({ ...m, type: m.username === username ? "sent" : "received" }))
         }));
-      } else {
+      } else if (data && data.chatId && Array.isArray(data.messages)) {
         setChatMessages(prev => ({
           ...prev,
           [data.chatId]: data.messages.map(m => ({ ...m, type: m.username === username ? "sent" : "received" }))
@@ -335,7 +335,7 @@ function Chat({ disconnectWallet }) {
     }
   }
 
-  const filteredChats = chats.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredChats = chats.filter(c => (c.name || "").toLowerCase().includes((searchQuery || "").toLowerCase()));
 
   if (!chatStarted) {
     return (
@@ -538,7 +538,7 @@ function Chat({ disconnectWallet }) {
 
         <div className="sidebar-footer">
           <div className="profile-mini">
-            <div className="avatar-small">{username[0]?.toUpperCase()}</div>
+            <div className="avatar-small">{username?.[0]?.toUpperCase() || "?"}</div>
             <div className="profile-info">
               <span className="profile-name">{username}</span>
               <span className="profile-status">Online</span>
@@ -551,16 +551,16 @@ function Chat({ disconnectWallet }) {
         </div>
       </div>
 
-      <div className="chat-area">
-        <div className="chat-header">
-          <div className="chat-header-info" onClick={() => setShowContactInfo(true)}>
+      <div className="chat-section">
+        <div className="chat-main-header">
+          <div className="chat-header-left" onClick={() => setShowContactInfo(true)}>
             <div className="avatar-small">{activeChat?.name?.[0]}</div>
-            <div className="chat-header-text">
+            <div className="chat-main-info">
               <h3>{activeChat?.name}</h3>
               <p>{isTyping ? `${typingUser} is typing...` : 'online'}</p>
             </div>
           </div>
-          <div className="chat-header-actions">
+          <div className="chat-header-right">
             <button className="icon-btn" title="Video Call" onClick={() => startCall('Video Call')}>📹</button>
             <button className="icon-btn" title="Voice Call" onClick={() => startCall('Voice Call')}>📞</button>
             <div className="divider"></div>
@@ -595,7 +595,15 @@ function Chat({ disconnectWallet }) {
                   <span className="msg-dropdown" onClick={() => deleteMessage(index)}>▼</span>
                 </div>
                 <p className="message-text">
-                  {CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8)}
+                  {msg.text ? (
+                    (() => {
+                      try {
+                        return CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+                      } catch (e) {
+                        return "Message encrypted or corrupted";
+                      }
+                    })()
+                  ) : "No message content"}
                 </p>
                 <div className="message-footer">
                   <span className="message-time">{msg.time}</span>
