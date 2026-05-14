@@ -41,6 +41,8 @@ function Chat({ disconnectWallet }) {
     { id: "2", name: "Bob (E2EE)", lastMsg: "Encryption works!", time: "11:30 AM", active: false, unread: 0 },
     { id: "3", name: "Crypto Group", lastMsg: "Check the update.", time: "Yesterday", active: false, unread: 5 },
   ]);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [newChatName, setNewChatName] = useState("");
 
   const activeChatId = chats.find(c => c.active)?.id || "global";
   const messages = chatMessages[activeChatId] || [];
@@ -66,6 +68,7 @@ function Chat({ disconnectWallet }) {
       username,
       text: encryptedMessage,
       type: "sent",
+      chatId: activeChatId,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
@@ -75,6 +78,9 @@ function Chat({ disconnectWallet }) {
     }));
 
     if (activeChatId === "global") {
+      socket.emit("send_message", messageData);
+    } else {
+      // For private chats, we still emit to server if we want cross-device sync
       socket.emit("send_message", messageData);
     }
     
@@ -135,13 +141,52 @@ function Chat({ disconnectWallet }) {
     input.click();
   }
 
+  function createNewChat() {
+    if (newChatName.trim() === "") return;
+    const newChat = {
+      id: Date.now().toString(),
+      name: newChatName,
+      lastMsg: "No messages yet",
+      time: "Just now",
+      active: true,
+      unread: 0
+    };
+    setChats(prev => prev.map(c => ({ ...c, active: false })).concat(newChat));
+    setChatMessages(prev => ({ ...prev, [newChat.id]: [] }));
+    setNewChatName("");
+    setShowNewChatModal(false);
+  }
+
   useEffect(() => {
     socket.on("receive_message", (data) => {
+      const targetChatId = data.chatId || "global";
       setChatMessages((prev) => ({
         ...prev,
-        global: [...prev.global, { ...data, type: "received" }]
+        [targetChatId]: [...(prev[targetChatId] || []), { ...data, type: data.username === username ? "sent" : "received" }]
       }));
-      setChats(prev => prev.map(c => c.id === 'global' ? { ...c, lastMsg: CryptoJS.AES.decrypt(data.text, SECRET_KEY).toString(CryptoJS.enc.Utf8), time: data.time } : c));
+      
+      setChats(prev => prev.map(c => c.id === targetChatId ? { 
+        ...c, 
+        lastMsg: CryptoJS.AES.decrypt(data.text, SECRET_KEY).toString(CryptoJS.enc.Utf8), 
+        time: data.time,
+        unread: (targetChatId !== activeChatId && data.username !== username) ? (c.unread + 1) : c.unread
+      } : c));
+    });
+
+    socket.on("load_messages", (data) => {
+      if (Array.isArray(data)) {
+        // Initial load (legacy or global)
+        setChatMessages(prev => ({
+          ...prev,
+          global: data.map(m => ({ ...m, type: m.username === username ? "sent" : "received" }))
+        }));
+      } else {
+        // Targeted load for a chatId
+        setChatMessages(prev => ({
+          ...prev,
+          [data.chatId]: data.messages.map(m => ({ ...m, type: m.username === username ? "sent" : "received" }))
+        }));
+      }
     });
 
     socket.on("online_users", (count) => {
@@ -183,28 +228,44 @@ function Chat({ disconnectWallet }) {
   if (!chatStarted) {
     return (
       <div className="join-page">
-        <div className="join-card">
-          <div className="join-icon">🔐</div>
-          <h1>Secure Login</h1>
-          <p>Access your encrypted messaging dashboard</p>
-          <div className="input-group">
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
+        <div className="glass-morphism login-card">
+          <div className="login-header">
+            <div className="login-lock-icon">🔐</div>
+            <h1>Secure Login</h1>
+            <p>Your privacy, protected by end-to-end encryption</p>
           </div>
-          <div className="input-group">
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+          <div className="login-body">
+            <div className="input-field">
+              <label>Username</label>
+              <input
+                type="text"
+                placeholder="e.g. Satoshi"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div className="input-field">
+              <label>Password</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="login-help">
+              <span>Hint: secure123</span>
+            </div>
           </div>
-          <button className="join-btn" onClick={joinChat}>Enter Secure Space</button>
-          <button className="back-btn" onClick={disconnectWallet}>Back to Landing</button>
+          <div className="login-footer">
+            <button className="primary-btn login-submit" onClick={joinChat}>
+              Enter Secure Space
+              <span className="btn-glow"></span>
+            </button>
+            <button className="text-btn logout-action" onClick={disconnectWallet}>
+              Back to Landing
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -250,6 +311,7 @@ function Chat({ disconnectWallet }) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            <button className="add-chat-btn" onClick={() => setShowNewChatModal(true)}>+</button>
           </div>
         </div>
 
@@ -260,6 +322,7 @@ function Chat({ disconnectWallet }) {
               className={`chat-item ${chat.active ? 'active' : ''}`}
               onClick={() => {
                 setChats(chats.map(c => ({ ...c, active: c.id === chat.id, unread: c.id === chat.id ? 0 : c.unread })));
+                socket.emit("get_messages", chat.id);
               }}
             >
               <div className="avatar-small">{chat.name[0]}</div>
@@ -414,6 +477,25 @@ function Chat({ disconnectWallet }) {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+      {showNewChatModal && (
+        <div className="modal-overlay">
+          <div className="glass-morphism modal-content">
+            <h3>Start New Conversation</h3>
+            <p>Enter the name of the contact or group</p>
+            <input 
+              type="text" 
+              placeholder="Contact Name" 
+              value={newChatName}
+              onChange={(e) => setNewChatName(e.target.value)}
+              autoFocus
+            />
+            <div className="modal-btns">
+              <button className="cancel-btn" onClick={() => setShowNewChatModal(false)}>Cancel</button>
+              <button className="confirm-btn" onClick={createNewChat}>Create Chat</button>
+            </div>
           </div>
         </div>
       )}

@@ -60,6 +60,17 @@ io.on("connection", async (socket) => {
 
   socket.emit("load_messages", oldMessages);
 
+  socket.on("get_messages", async (chatId) => {
+    if (dbConnected) {
+      try {
+        const chatHistory = await Message.find({ chatId }).sort({ createdAt: 1 });
+        socket.emit("load_messages", { chatId, messages: chatHistory });
+      } catch (e) {
+        console.log("Error fetching chat history: ", e.message);
+      }
+    }
+  });
+
   socket.on("typing", (data) => {
     socket.broadcast.emit("user_typing", data);
   });
@@ -74,6 +85,7 @@ io.on("connection", async (socket) => {
         const newMessage = new Message({
           username: data.username,
           text: data.text,
+          chatId: data.chatId || "global",
         });
         await newMessage.save();
       } catch (e) {
