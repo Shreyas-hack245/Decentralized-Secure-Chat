@@ -337,6 +337,12 @@ function Chat({ disconnectWallet }) {
 
   const filteredChats = chats.filter(c => (c.name || "").toLowerCase().includes((searchQuery || "").toLowerCase()));
 
+  useEffect(() => {
+    if (settings.privacyLock) {
+       setIsLocked(true);
+    }
+  }, [settings.privacyLock]);
+
   if (!chatStarted) {
     return (
       <div className="join-page">
@@ -378,13 +384,6 @@ function Chat({ disconnectWallet }) {
   }
 
   const activeChat = chats.find(c => c.active);
-
-  useEffect(() => {
-    if (settings.privacyLock) {
-       setIsLocked(true);
-    }
-  }, [settings.privacyLock]);
-
   return (
     <div className="chat-wrapper">
       {settings.privacyLock && isLocked && (
