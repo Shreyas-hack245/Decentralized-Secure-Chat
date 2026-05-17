@@ -756,10 +756,11 @@ function Chat({ disconnectWallet }) {
             ➤
           </button>
           {showEmojiPicker && (
-            <div className="emoji-mini-picker">
-              {['❤️', '👍', '😂', '🔥', '🚀', '🔒', '👋', '✨', '💎', '🎉', '💻', '🔐', '📱', '💬', '🌈', '⚡', '🤖', '👾'].map(emoji => (
-                <span key={emoji} onClick={() => { setMessage(prev => prev + emoji); setShowEmojiPicker(false); }}>{emoji}</span>
-              ))}
+            <div className="emoji-picker-container" style={{ position: 'absolute', bottom: '100%', right: '0', zIndex: 1000, marginBottom: '10px' }}>
+              <EmojiPicker 
+                theme={settings.darkMode ? "dark" : "light"} 
+                onEmojiClick={(emojiObject) => { setMessage(prev => prev + emojiObject.emoji); setShowEmojiPicker(false); }} 
+              />
             </div>
           )}
         </div>
