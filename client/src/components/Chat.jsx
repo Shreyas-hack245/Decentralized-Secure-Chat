@@ -50,18 +50,28 @@ function Chat({ disconnectWallet }) {
   const [userProfile, setUserProfile] = useState({ status: "SecureChat user. Privacy enthusiast." });
   const [isLocked, setIsLocked] = useState(false);
   const [lockPin, setLockPin] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "info" });
+  const [callStatus, setCallStatus] = useState("Ringing...");
+  const [activeMsgMenu, setActiveMsgMenu] = useState(null);
+  const [blockedUsers, setBlockedUsers] = useState([]);
   const callIntervalRef = useRef(null);
 
   const activeChatId = chats.find(c => c.active)?.id || "global";
   const messages = chatMessages[activeChatId] || [];
+  const isBlocked = blockedUsers.includes(activeChatId);
+
+  const showToast = (msg, type = "info") => {
+    setToast({ show: true, message: msg, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "info" }), 3000);
+  };
 
   function joinChat() {
     if (username.trim() === "" || password.trim() === "") {
-      alert("Enter username and password");
+      showToast("Enter username and password", "error");
       return;
     }
     if (password !== "secure123") {
-      alert("Wrong password (hint: secure123)");
+      showToast("Wrong password (hint: secure123)", "error");
       return;
     }
     setChatStarted(true);
@@ -101,40 +111,46 @@ function Chat({ disconnectWallet }) {
   }
 
   function deleteMessage(index) {
-    if (confirm("Delete this message?")) {
-      const updatedMessages = messages.filter((_, i) => i !== index);
-      setChatMessages(prev => ({
-        ...prev,
-        [activeChatId]: updatedMessages
-      }));
+    const updatedMessages = messages.filter((_, i) => i !== index);
+    setChatMessages(prev => ({
+      ...prev,
+      [activeChatId]: updatedMessages
+    }));
 
-      // SYNC SIDEBAR: Update last message in sidebar if deleted message was the last one
-      const newLastMsg = updatedMessages.length > 0 
-        ? CryptoJS.AES.decrypt(updatedMessages[updatedMessages.length - 1].text, SECRET_KEY).toString(CryptoJS.enc.Utf8)
-        : "No messages yet";
-      setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: newLastMsg } : c));
-    }
+    // SYNC SIDEBAR: Update last message in sidebar if deleted message was the last one
+    const newLastMsg = updatedMessages.length > 0 
+      ? CryptoJS.AES.decrypt(updatedMessages[updatedMessages.length - 1].text, SECRET_KEY).toString(CryptoJS.enc.Utf8)
+      : "No messages yet";
+    setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: newLastMsg } : c));
+    showToast("Message deleted.", "info");
+    setActiveMsgMenu(null);
   }
 
   function clearChat() {
     if (window.confirm("Clear history for this chat?")) {
       setChatMessages(prev => ({ ...prev, [activeChatId]: [] }));
       setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: "No messages yet" } : c));
+      showToast("Chat cleared securely.", "success");
     }
   }
 
   function handleFeatureAlert(name) {
-    alert(`${name} is coming soon in Phase 2!`);
+    showToast(`${name} is coming soon in Phase 2!`, "info");
   }
 
   function startCall(type) {
     setCallType(type);
     setIsCalling(true);
+    setCallStatus("Ringing...");
     setCallTimer(0);
     if (callIntervalRef.current) clearInterval(callIntervalRef.current);
-    callIntervalRef.current = setInterval(() => {
-      setCallTimer(prev => prev + 1);
-    }, 1000);
+    
+    setTimeout(() => {
+      setCallStatus("Connected");
+      callIntervalRef.current = setInterval(() => {
+        setCallTimer(prev => prev + 1);
+      }, 1000);
+    }, 2500);
     
     // Auto end after 30s
     setTimeout(() => {
@@ -161,7 +177,7 @@ function Chat({ disconnectWallet }) {
 
   function toggleSetting(key) {
     if (key === 'privacyLock' && !settings.privacyLock) {
-       alert("Privacy lock enabled! PIN is 1234");
+       showToast("Privacy lock enabled! PIN is 1234", "success");
     }
     if (key === 'notifications' && !settings.notifications) {
        if ("Notification" in window && Notification.permission !== "granted") {
@@ -184,8 +200,9 @@ function Chat({ disconnectWallet }) {
     if (lockPin === "1234") {
       setIsLocked(false);
       setLockPin("");
+      showToast("Unlocked successfully", "success");
     } else {
-      alert("Incorrect PIN (Hint: 1234)");
+      showToast("Incorrect PIN (Hint: 1234)", "error");
     }
   }
 
@@ -212,10 +229,37 @@ function Chat({ disconnectWallet }) {
     input.onchange = (e) => {
       const file = e.target.files[0];
       if (file) {
-        setMessage(`Shared a file: ${file.name}`);
+        const filePrefix = `[FILE:${file.name}:${(file.size / 1024).toFixed(1)}KB]`;
+        const encryptedMessage = CryptoJS.AES.encrypt(filePrefix, SECRET_KEY).toString();
+
+        const messageData = {
+          username,
+          text: encryptedMessage,
+          type: "sent",
+          chatId: activeChatId,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        };
+
+        setChatMessages(prev => ({
+          ...prev,
+          [activeChatId]: [...(prev[activeChatId] || []), messageData]
+        }));
+
+        socket.emit("send_message", messageData);
+        setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: `📄 ${file.name}`, time: messageData.time } : c));
       }
     };
     input.click();
+  }
+
+  function handleBlock() {
+    if (isBlocked) {
+      setBlockedUsers(prev => prev.filter(id => id !== activeChatId));
+      showToast(`${activeChat?.name} unblocked`, "success");
+    } else {
+      setBlockedUsers(prev => [...prev, activeChatId]);
+      showToast(`${activeChat?.name} blocked`, "error");
+    }
   }
 
   function createNewChat() {
@@ -427,6 +471,13 @@ function Chat({ disconnectWallet }) {
   const activeChat = chats.find(c => c.active);
   return (
     <div className="chat-wrapper">
+      {toast.show && (
+        <div className={`toast-notification toast-${toast.type}`}>
+          <div className="toast-icon">{toast.type === "success" ? "✓" : toast.type === "error" ? "✕" : "ℹ"}</div>
+          <div className="toast-message">{toast.message}</div>
+        </div>
+      )}
+
       {settings.privacyLock && isLocked && (
         <div className="lock-screen">
           <div className="lock-card">
@@ -455,7 +506,10 @@ function Chat({ disconnectWallet }) {
             <div className="avatar-large">{activeChat?.name?.[0]}</div>
             <h2>{callType}</h2>
             <p className="calling-username">{activeChat?.name}</p>
-            <div className="call-timer">{Math.floor(callTimer / 60)}:{String(callTimer % 60).padStart(2, '0')}</div>
+            <div className="call-status-text">{callStatus}</div>
+            {callStatus === "Connected" && (
+              <div className="call-timer">{Math.floor(callTimer / 60)}:{String(callTimer % 60).padStart(2, '0')}</div>
+            )}
             <div className="calling-btns">
               <button className="end-call-btn" onClick={endCall}>
                 <span className="icon">📞</span>
@@ -604,14 +658,13 @@ function Chat({ disconnectWallet }) {
             <button className="icon-btn" title="Video Call" onClick={() => startCall('Video Call')}>📹</button>
             <button className="icon-btn" title="Voice Call" onClick={() => startCall('Voice Call')}>📞</button>
             <div className="divider"></div>
-            <button className="icon-btn" title="Clear Chat" onClick={clearChat}>🗑️</button>
             <div className="more-options-container">
               <button className="icon-btn" title="More Options" onClick={() => setShowMoreOptions(!showMoreOptions)}>⋮</button>
               {showMoreOptions && (
                 <div className="options-dropdown">
                   <div className="option-item" onClick={exportChat}>📤 Export Chat (.txt)</div>
                   <div className="option-item" onClick={() => { setIsMuted(!isMuted); setShowMoreOptions(false); }}>{isMuted ? '🔊 Unmute' : '🔕 Mute'}</div>
-                  <div className="option-item danger" onClick={() => { alert('Chat Blocked'); setShowMoreOptions(false); }}>🚫 Block</div>
+                  <div className="option-item danger" onClick={() => { handleBlock(); setShowMoreOptions(false); }}>🚫 Block</div>
                 </div>
               )}
             </div>
@@ -632,19 +685,47 @@ function Chat({ disconnectWallet }) {
               )}
               <div className={`message-bubble ${msg.type}`}>
                 <div className="message-header-actions">
-                  <span className="msg-dropdown" onClick={() => deleteMessage(index)}>▼</span>
+                  <span className="msg-dropdown" onClick={() => setActiveMsgMenu(activeMsgMenu === index ? null : index)}>▼</span>
+                  {activeMsgMenu === index && (
+                    <div className="msg-context-menu">
+                      <div className="msg-menu-item" onClick={() => { 
+                          try {
+                              const dec = CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+                              navigator.clipboard.writeText(dec); 
+                              showToast("Copied to clipboard", "success");
+                          } catch(e){}
+                          setActiveMsgMenu(null); 
+                      }}>📋 Copy Text</div>
+                      <div className="msg-menu-item danger" onClick={() => deleteMessage(index)}>🗑️ Delete Message</div>
+                    </div>
+                  )}
                 </div>
-                <p className="message-text">
-                  {msg.text ? (
-                    (() => {
-                      try {
-                        return CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8);
-                      } catch (e) {
-                        return "Message encrypted or corrupted";
+                <div className="message-content">
+                  {(() => {
+                    if (!msg.text) return <p className="message-text">No message content</p>;
+                    try {
+                      const decrypted = CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+                      if (decrypted.startsWith("[FILE:")) {
+                         const match = decrypted.match(/\[FILE:(.+?):(.+?)\]/);
+                         if (match) {
+                            return (
+                              <div className="file-attachment">
+                                <div className="file-icon">📄</div>
+                                <div className="file-details">
+                                  <span className="file-name">{match[1]}</span>
+                                  <span className="file-size">{match[2]} - Secure File</span>
+                                </div>
+                                <button className="file-download-btn" onClick={() => showToast("Decrypting file...", "info")}>⬇️</button>
+                              </div>
+                            );
+                         }
                       }
-                    })()
-                  ) : "No message content"}
-                </p>
+                      return <p className="message-text">{decrypted}</p>;
+                    } catch (e) {
+                      return <p className="message-text">Message encrypted or corrupted</p>;
+                    }
+                  })()}
+                </div>
                 <div className="message-footer">
                   <span className="message-time">{msg.time}</span>
                   {msg.type === "sent" && <span className="message-status">✓✓</span>}
@@ -661,14 +742,16 @@ function Chat({ disconnectWallet }) {
           </div>
           <input 
             type="text" 
-            placeholder="Type a message..."
+            placeholder={isBlocked ? "You cannot send messages to blocked contacts." : "Type a message..."}
             value={message}
             onChange={(e) => handleTyping(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            disabled={isBlocked}
           />
           <button 
-            className={`send-btn ${message.trim() ? 'active' : ''}`} 
+            className={`send-btn ${(message.trim() && !isBlocked) ? 'active' : ''}`} 
             onClick={sendMessage}
+            disabled={isBlocked}
           >
             ➤
           </button>
@@ -762,7 +845,7 @@ function Chat({ disconnectWallet }) {
                 <div className="contact-profile">
                   <div className="avatar-large">{activeChat?.name?.[0]}</div>
                   <h2>{activeChat?.name}</h2>
-                  <p>{activeChat?.id === 'global' ? 'Public Group' : '+1 234 567 890'}</p>
+                  <p className="node-id">{activeChat?.id === 'global' ? 'Public Node Cluster' : `Node ID: 0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`}</p>
                 </div>
                 <div className="contact-section-item">
                    <h4>About</h4>
@@ -783,13 +866,13 @@ function Chat({ disconnectWallet }) {
                 <div className="contact-section-item">
                    <h4>Media, Links and Docs</h4>
                    <div className="media-preview">
-                      <div className="media-box"></div>
-                      <div className="media-box"></div>
-                      <div className="media-box"></div>
+                      <div className="media-box has-image"><div className="lock-overlay">🔐</div></div>
+                      <div className="media-box has-image"><div className="lock-overlay">🔐</div></div>
+                      <div className="media-box has-image"><div className="lock-overlay">🔐</div></div>
                    </div>
                 </div>
                 <div className="contact-actions">
-                   <button className="danger-btn" onClick={() => handleFeatureAlert('Block User')}>Block {activeChat?.name}</button>
+                   <button className="danger-btn" onClick={handleBlock}>{isBlocked ? `Unblock ${activeChat?.name}` : `Block ${activeChat?.name}`}</button>
                    <button className="danger-btn" onClick={() => handleFeatureAlert('Report User')}>Report {activeChat?.name}</button>
                 </div>
               </>
