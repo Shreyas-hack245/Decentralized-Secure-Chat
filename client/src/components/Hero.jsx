@@ -1,59 +1,73 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function Hero({ connectWallet }) {
-  const [isLocked, setIsLocked] = useState(true);
+  const [terminalLines, setTerminalLines] = useState([
+    "[SYS] Initializing SecureChat Protocol v2.0...",
+  ]);
 
-  const features = [
-    { title: "Zero-Knowledge", icon: "🛡️", desc: "Provable Data Secrecy" },
-    { title: "Quantum-Resistant", icon: "🌐", desc: "Lattice Cryptography" },
-    { title: "Peer-to-Peer", icon: "⚡", desc: "Distributed Consensus" }
-  ];
+  useEffect(() => {
+    const lines = [
+      "[SYS] Initializing SecureChat Protocol v2.0...",
+      "[AUTH] Generating Zero-Knowledge Proofs...",
+      "[NODE] Connecting to Global P2P Cluster...",
+      "[NET] Synchronizing Lattice Cryptography Keys...",
+      "[OK] Secure Environment Verified."
+    ];
+    let i = 1;
+    const interval = setInterval(() => {
+      if (i < lines.length) {
+        setTerminalLines(prev => [...prev, lines[i]]);
+        i++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 800);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <section className="hero">
-      <div className="hero-content">
-        <div className="badge">
-          <span className="pulse-mini"></span>
+    <section className="hero-center">
+      <div className="hero-grid-bg"></div>
+      
+      <div className="hero-center-content">
+        <div className="hero-badge">
+          <span className="pulse-mini-accent"></span>
           Decentralized Protocol v2.0
         </div>
-        <h1 className="title">
-          Uncompromised <span className="highlight">Security</span>.<br/>Borderless <span className="highlight">Communication</span>.
+        
+        <h1 className="hero-massive-title">
+          UNCOMPROMISED <span className="text-gradient">SECURITY</span>.<br />
+          BORDERLESS <span className="text-gradient">COMMUNICATION</span>.
         </h1>
-        <p className="subtitle">
+        
+        <p className="hero-center-subtitle">
           Engineered for absolute confidentiality. Communicate seamlessly across a distributed node architecture with zero trust required and zero metadata retained.
         </p>
         
-        <div className="hero-btns">
-          <button className="connect-btn" onClick={connectWallet}>
+        <div className="hero-terminal">
+          <div className="terminal-header">
+            <span className="dot red"></span>
+            <span className="dot yellow"></span>
+            <span className="dot green"></span>
+            <span className="terminal-title">node-connection.sh</span>
+          </div>
+          <div className="terminal-body">
+            {terminalLines.map((line, idx) => (
+              <div key={idx} className="terminal-line">
+                <span className="prompt">~ $</span> {line}
+              </div>
+            ))}
+            {terminalLines.length < 5 && <div className="terminal-cursor">_</div>}
+          </div>
+        </div>
+
+        <div className="hero-center-actions">
+          <button className="glow-btn-primary" onClick={connectWallet}>
             Initialize Secure Node
           </button>
-          <button className="secondary-btn">
+          <button className="glow-btn-secondary">
             View Architecture
           </button>
-        </div>
-
-        <div className="hero-features-grid">
-          {features.map((f, i) => (
-            <div key={i} className="hero-feature-pill" style={{animationDelay: `${i * 0.1}s`}}>
-              <span className="f-icon">{f.icon}</span>
-              <div className="f-text">
-                <h4>{f.title}</h4>
-                <p>{f.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="hero-visual" onClick={() => setIsLocked(!isLocked)} style={{ cursor: 'pointer' }}>
-        <div className={`floating-lock ${!isLocked ? 'unlocked' : ''}`}>
-          {isLocked ? '🔐' : '🔓'}
-        </div>
-        {!isLocked && <div className="unlock-ripple"></div>}
-        <div className="orb orb-1"></div>
-        <div className="orb orb-2"></div>
-        <div className={`security-status-indicator ${!isLocked ? 'verified' : ''}`}>
-           {isLocked ? '🔒 Secure Environment' : '✅ Identity Verified'}
         </div>
       </div>
     </section>
