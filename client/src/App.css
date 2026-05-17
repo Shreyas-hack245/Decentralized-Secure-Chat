@@ -2111,3 +2111,119 @@ body.midnight .whatsapp-bg {
     linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)),
     url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
 }
+
+/* --- Polish UI Additions --- */
+
+/* Toast Notifications */
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  animation: slideInRight 0.3s ease-out;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+.toast-success { border-left: 4px solid var(--success-color); }
+.toast-error { border-left: 4px solid #ff4d4d; }
+.toast-info { border-left: 4px solid var(--accent-color); }
+.toast-icon { font-weight: bold; font-size: 1.2rem; }
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Call Status Text */
+.call-status-text {
+  font-size: 0.9rem;
+  color: var(--accent-color);
+  animation: pulse-text 1.5s infinite;
+  margin-bottom: 10px;
+}
+@keyframes pulse-text {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+/* Message Context Menu */
+.msg-context-menu {
+  position: absolute;
+  right: 0;
+  top: 20px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  z-index: 100;
+  min-width: 150px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.msg-menu-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+.msg-menu-item:hover { background: rgba(255, 255, 255, 0.05); }
+.msg-menu-item.danger { color: #ff4d4d; }
+.msg-menu-item.danger:hover { background: rgba(255, 77, 77, 0.1); }
+
+/* File Attachments */
+.file-attachment {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+}
+.file-icon { font-size: 2rem; }
+.file-details { display: flex; flex-direction: column; gap: 0.2rem; }
+.file-name { font-weight: bold; font-size: 0.9rem; color: #fff; }
+.file-size { font-size: 0.75rem; color: var(--text-secondary); }
+.file-download-btn {
+  background: var(--accent-color);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+/* Node ID */
+.node-id {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--accent-color);
+  background: rgba(0, 242, 254, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Media Gallery Placeholders */
+.media-box.has-image {
+  background: linear-gradient(45deg, #1e1e1e, #2d2d2d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.lock-overlay {
+  font-size: 1.5rem;
+  opacity: 0.5;
+}
