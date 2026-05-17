@@ -2522,3 +2522,85 @@ body.midnight .whatsapp-bg {
 }
 
 .arch-modal-content .close-btn:hover { opacity: 1; }
+
+/* --- Premium Login & Unlock Animation --- */
+.new-login-bg {
+  background: radial-gradient(circle at center, rgba(0, 242, 254, 0.1) 0%, transparent 60%);
+}
+
+.premium-login {
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  box-shadow: 0 0 40px rgba(0, 242, 254, 0.1);
+  transition: all 0.5s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.premium-login.unlocking {
+  border-color: var(--success-color);
+  box-shadow: 0 0 50px rgba(39, 201, 63, 0.2);
+  transform: scale(1.05);
+}
+
+.premium-btn {
+  background: var(--accent-gradient);
+  color: #000;
+  font-weight: bold;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+  margin-top: 1rem;
+}
+
+.premium-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(0, 242, 254, 0.5);
+}
+
+.unlock-animation-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.unlock-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: pulse-ring 2s infinite, unlock-jiggle 0.5s ease-in-out;
+}
+
+@keyframes unlock-jiggle {
+  0% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+  100% { transform: rotate(0); }
+}
+
+.decrypting-text {
+  color: var(--success-color);
+  font-family: monospace;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+  animation: blink 1s infinite;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--success-color);
+  width: 0%;
+  animation: fillProgress 1.2s ease-in-out forwards;
+}
+
+@keyframes fillProgress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}

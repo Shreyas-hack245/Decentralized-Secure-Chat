@@ -55,6 +55,7 @@ function Chat({ disconnectWallet }) {
   const [callStatus, setCallStatus] = useState("Ringing...");
   const [activeMsgMenu, setActiveMsgMenu] = useState(null);
   const [blockedUsers, setBlockedUsers] = useState([]);
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const callIntervalRef = useRef(null);
 
   const activeChatId = chats.find(c => c.active)?.id || "global";
@@ -75,10 +76,15 @@ function Chat({ disconnectWallet }) {
       showToast("Wrong password (hint: secure123)", "error");
       return;
     }
-    setChatStarted(true);
-    socket.emit("get_chats", username.trim());
-    socket.emit("get_user_data", username.trim());
-    socket.emit("get_messages", "global");
+    
+    setIsUnlocking(true);
+    setTimeout(() => {
+      setIsUnlocking(false);
+      setChatStarted(true);
+      socket.emit("get_chats", username.trim());
+      socket.emit("get_user_data", username.trim());
+      socket.emit("get_messages", "global");
+    }, 1500);
   }
 
   function sendMessage() {
@@ -431,39 +437,50 @@ function Chat({ disconnectWallet }) {
 
   if (!chatStarted) {
     return (
-      <div className="join-page">
-        <div className="glass-morphism login-card">
-          <div className="login-header">
-            <div className="login-lock-icon">🔐</div>
-            <h1>Secure Login</h1>
-            <p>Your privacy, protected by end-to-end encryption</p>
-          </div>
-          <div className="login-body">
-            <div className="input-group">
-              <label>Username</label>
-              <input 
-                type="text" 
-                placeholder="Enter your unique handle" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
+      <div className="join-page new-login-bg">
+        <div className={`glass-morphism login-card premium-login ${isUnlocking ? 'unlocking' : ''}`}>
+          {isUnlocking ? (
+            <div className="unlock-animation-container">
+              <div className="unlock-icon">🔓</div>
+              <h2 className="decrypting-text">Decrypting Keys...</h2>
+              <div className="progress-bar"><div className="progress-fill"></div></div>
             </div>
-            <div className="input-group">
-              <label>Passphrase</label>
-              <input 
-                type="password" 
-                placeholder="••••••••" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <button className="join-btn" onClick={joinChat}>
-              Connect Securely
-            </button>
-            <div className="login-footer">
-              <p>🔒 AES-256 Bit Encryption Active</p>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="login-header">
+                <div className="login-lock-icon">🔐</div>
+                <h1>Secure Login</h1>
+                <p>Your privacy, protected by end-to-end encryption</p>
+              </div>
+              <div className="login-body">
+                <div className="input-group">
+                  <label>Username</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter your unique handle" 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Passphrase</label>
+                  <input 
+                    type="password" 
+                    placeholder="••••••••" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && joinChat()}
+                  />
+                </div>
+                <button className="join-btn premium-btn" onClick={joinChat}>
+                  Connect Securely
+                </button>
+                <div className="login-footer">
+                  <p>🔒 AES-256 Bit Encryption Active</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
