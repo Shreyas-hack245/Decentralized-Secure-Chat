@@ -32,7 +32,8 @@ function Chat({ disconnectWallet }) {
   const [settings, setSettings] = useState({
     notifications: true,
     darkMode: true,
-    privacyLock: false
+    privacyLock: false,
+    autoDelete: false
   });
   
   const [chats, setChats] = useState([
@@ -45,7 +46,6 @@ function Chat({ disconnectWallet }) {
   const [newChatName, setNewChatName] = useState("");
   const [callTimer, setCallTimer] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
-  const [autoDelete, setAutoDelete] = useState(false);
   const [activeTab, setActiveTab] = useState("chats"); // chats, status
   const [userProfile, setUserProfile] = useState({ status: "SecureChat user. Privacy enthusiast." });
   const [isLocked, setIsLocked] = useState(false);
@@ -163,6 +163,11 @@ function Chat({ disconnectWallet }) {
     if (key === 'privacyLock' && !settings.privacyLock) {
        alert("Privacy lock enabled! PIN is 1234");
     }
+    if (key === 'notifications' && !settings.notifications) {
+       if ("Notification" in window && Notification.permission !== "granted") {
+          Notification.requestPermission();
+       }
+    }
     const newSettings = { ...settings, [key]: !settings[key] };
     setSettings(newSettings);
     socket.emit("update_settings", { username, settings: newSettings });
@@ -187,9 +192,17 @@ function Chat({ disconnectWallet }) {
   function toggleTheme(theme) {
      if (theme === 'midnight') {
         document.body.classList.toggle('midnight');
+        document.body.classList.remove('light-mode');
      } else {
-        setSettings(prev => ({ ...prev, darkMode: !prev.darkMode }));
-        document.body.classList.toggle('light-mode'); // Optional: implement light mode
+        const newSettings = { ...settings, darkMode: !settings.darkMode };
+        setSettings(newSettings);
+        socket.emit("update_settings", { username, settings: newSettings });
+        if (newSettings.darkMode) {
+           document.body.classList.remove('light-mode');
+        } else {
+           document.body.classList.add('light-mode');
+        }
+        document.body.classList.remove('midnight');
      }
   }
 
@@ -230,20 +243,17 @@ function Chat({ disconnectWallet }) {
         setUserProfile({ status: data.status });
         if (data.settings) {
           setSettings(data.settings);
-          setAutoDelete(data.settings.autoDelete || false);
         }
       }
     });
   }, []);
 
   useEffect(() => {
-    if (autoDelete) {
+    if (settings.autoDelete) {
       const timer = setInterval(() => {
         setChatMessages(prev => {
           const updated = { ...prev };
           Object.keys(updated).forEach(chatId => {
-             // Keep only messages from last 60 seconds
-             // (In a real app, we'd check timestamps)
              if (updated[chatId].length > 5) {
                 updated[chatId] = updated[chatId].slice(-5);
              }
@@ -253,7 +263,32 @@ function Chat({ disconnectWallet }) {
       }, 10000);
       return () => clearInterval(timer);
     }
-  }, [autoDelete]);
+  }, [settings.autoDelete]);
+
+  useEffect(() => {
+    let inactivityTimer;
+    const resetTimer = () => {
+      if (settings.privacyLock && !isLocked) {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => setIsLocked(true), 60000); // Lock after 60s
+      }
+    };
+
+    if (settings.privacyLock && !isLocked) {
+      window.addEventListener('mousemove', resetTimer);
+      window.addEventListener('keypress', resetTimer);
+      resetTimer();
+    }
+    
+    return () => {
+      clearTimeout(inactivityTimer);
+      window.removeEventListener('mousemove', resetTimer);
+      window.removeEventListener('keypress', resetTimer);
+    };
+  }, [settings.privacyLock, isLocked]);
+
+  const settingsRef = useRef(settings);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
 
   useEffect(() => {
     socket.on("receive_message", (data) => {
@@ -269,6 +304,12 @@ function Chat({ disconnectWallet }) {
         time: data.time,
         unread: (targetChatId !== activeChatId && data.username !== username) ? (c.unread + 1) : c.unread
       } : c));
+
+      if (settingsRef.current.notifications && targetChatId !== activeChatId && data.username !== username) {
+        if ("Notification" in window && Notification.permission === "granted") {
+          new Notification("SecureChat", { body: `New message in ${targetChatId}` });
+        }
+      }
     });
 
     socket.on("load_messages", (data) => {
@@ -678,7 +719,7 @@ function Chat({ disconnectWallet }) {
                           <span>Auto-delete</span>
                        </div>
                        <label className="switch">
-                          <input type="checkbox" checked={autoDelete} onChange={() => setAutoDelete(!autoDelete)} />
+                          <input type="checkbox" checked={settings.autoDelete} onChange={() => toggleSetting('autoDelete')} />
                           <span className="slider"></span>
                        </label>
                     </div>

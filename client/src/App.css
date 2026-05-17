@@ -2054,3 +2054,60 @@ input:checked + .slider:before {
   background: linear-gradient(90deg, rgba(0, 242, 254, 0.05) 0%, rgba(255, 255, 255, 0.03) 100%);
   border-left: 3px solid var(--accent-color);
 }
+
+/* Light Mode Theme */
+body.light-mode {
+  --primary-bg: #f4f7f6;
+  --secondary-bg: #ffffff;
+  --text-primary: #1e1e1e;
+  --text-secondary: #555555;
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  background: var(--primary-bg);
+  color: var(--text-primary);
+}
+
+body.light-mode .whatsapp-bg {
+  background-image:
+    linear-gradient(rgba(244, 247, 246, 0.9), rgba(244, 247, 246, 0.9)),
+    url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+}
+
+body.light-mode .message-bubble.received {
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+}
+
+body.light-mode .message-input-area input {
+  background: #ffffff;
+  color: #1e1e1e;
+  border: 1px solid var(--glass-border);
+}
+
+body.light-mode .contact-info-sidebar {
+  background: var(--secondary-bg);
+}
+
+body.light-mode .settings-group {
+  background: var(--primary-bg);
+}
+
+body.light-mode .setting-item-premium {
+  background: var(--secondary-bg);
+}
+
+/* Midnight Theme */
+body.midnight {
+  --primary-bg: #000000;
+  --secondary-bg: #050505;
+  --glass-bg: rgba(5, 5, 5, 0.9);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  background: var(--primary-bg);
+}
+
+body.midnight .whatsapp-bg {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)),
+    url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+}
