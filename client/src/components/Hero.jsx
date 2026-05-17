@@ -4,6 +4,7 @@ function Hero({ connectWallet }) {
   const [terminalLines, setTerminalLines] = useState([
     "[SYS] Initializing SecureChat Protocol v2.0...",
   ]);
+  const [showArch, setShowArch] = useState(false);
 
   useEffect(() => {
     const lines = [
@@ -65,11 +66,43 @@ function Hero({ connectWallet }) {
           <button className="glow-btn-primary" onClick={connectWallet}>
             Initialize Secure Node
           </button>
-          <button className="glow-btn-secondary">
+          <button className="glow-btn-secondary" onClick={() => setShowArch(true)}>
             View Architecture
           </button>
         </div>
       </div>
+
+      {showArch && (
+        <div className="arch-modal-overlay" onClick={() => setShowArch(false)}>
+          <div className="arch-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="close-btn" onClick={() => setShowArch(false)}>✕</button>
+            <h2>Decentralized Architecture</h2>
+            <div className="arch-diagram">
+              <div className="arch-node">Client App<br/><span>AES-256 E2EE</span></div>
+              <div className="arch-arrow">↔</div>
+              <div className="arch-node center">Relay Node<br/><span>Zero-Knowledge</span></div>
+              <div className="arch-arrow">↔</div>
+              <div className="arch-node">Peer Client<br/><span>Local Decrypt</span></div>
+            </div>
+            <div className="arch-details">
+              <div className="detail-item">
+                <span className="icon">🔒</span>
+                <div>
+                  <h4>Zero Trust</h4>
+                  <p>Nodes route packets but cannot decrypt payloads or retain metadata.</p>
+                </div>
+              </div>
+              <div className="detail-item">
+                <span className="icon">⚡</span>
+                <div>
+                  <h4>Low Latency</h4>
+                  <p>Direct socket connections ensure real-time, peer-to-peer delivery.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
