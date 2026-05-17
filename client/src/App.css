@@ -2409,3 +2409,116 @@ body.midnight .whatsapp-bg {
 .glow-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* --- Architecture Modal --- */
+.arch-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(15px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.arch-modal-content {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 3rem;
+  border-radius: 20px;
+  max-width: 800px;
+  width: 90%;
+  position: relative;
+  text-align: left;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+}
+
+.arch-modal-content h2 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #fff;
+}
+
+.arch-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.arch-node {
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid var(--accent-color);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  color: #fff;
+  flex: 1;
+}
+
+.arch-node span {
+  font-size: 0.8rem;
+  color: var(--accent-color);
+  font-weight: normal;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.arch-node.center {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.arch-node.center span { color: #aaa; }
+
+.arch-arrow {
+  color: var(--accent-color);
+  font-size: 1.5rem;
+  padding: 0 1rem;
+  animation: pulse-ring 2s infinite;
+}
+
+.arch-details {
+  display: flex;
+  gap: 2rem;
+}
+
+.detail-item {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+.detail-item .icon {
+  font-size: 1.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 12px;
+  height: fit-content;
+}
+
+.detail-item h4 { margin-bottom: 0.5rem; color: #fff; }
+.detail-item p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; }
+
+.arch-modal-content .close-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.arch-modal-content .close-btn:hover { opacity: 1; }
