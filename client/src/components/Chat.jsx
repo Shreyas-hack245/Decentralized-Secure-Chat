@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import EmojiPicker from "emoji-picker-react";
 
 import io from "socket.io-client";
 
