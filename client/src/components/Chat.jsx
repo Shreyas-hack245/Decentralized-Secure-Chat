@@ -527,7 +527,7 @@ function Chat({ disconnectWallet }) {
     <div className="chat-wrapper">
       {toast.show && (
         <div className={`toast-notification toast-${toast.type}`}>
-          <div className="toast-icon">{toast.type === "success" ? "✓" : toast.type === "error" ? "✕" : "ℹ"}</div>
+          <div className="toast-icon">{toast.type === "success" ? <Ic.Check /> : toast.type === "error" ? <Ic.X /> : <Ic.Info />}</div>
           <div className="toast-message">{toast.message}</div>
         </div>
       )}
@@ -535,7 +535,7 @@ function Chat({ disconnectWallet }) {
       {settings.privacyLock && isLocked && (
         <div className="lock-screen">
           <div className="lock-card">
-            <div className="avatar-large">🔐</div>
+            <div className="avatar-large" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'var(--accent-color)'}}><Ic.Lock s={48}/></div>
             <h2>SecureChat Locked</h2>
             <p>Enter your 4-digit PIN to continue</p>
             <input 
@@ -566,7 +566,7 @@ function Chat({ disconnectWallet }) {
             )}
             <div className="calling-btns">
               <button className="end-call-btn" onClick={endCall}>
-                <span className="icon">📞</span>
+                <span className="icon" style={{display:'flex'}}><Ic.PhoneOff s={18}/></span>
                 End Call
               </button>
             </div>
@@ -580,7 +580,7 @@ function Chat({ disconnectWallet }) {
             <button className={`tab-btn ${activeTab === 'chats' ? 'active' : ''}`} onClick={() => setActiveTab('chats')}>Chats</button>
             <button className={`tab-btn ${activeTab === 'status' ? 'active' : ''}`} onClick={() => setActiveTab('status')}>Updates</button>
           </div>
-          <button className="icon-btn" title="New Chat" onClick={() => setShowNewChatModal(true)}>+</button>
+          <button className="icon-btn" title="New Chat" onClick={() => setShowNewChatModal(true)}><Ic.Plus /></button>
         </div>
 
         <div className="sidebar-content">
@@ -625,7 +625,7 @@ function Chat({ disconnectWallet }) {
           ) : (
             <div className="status-list">
                <div className="status-item-mine">
-                  <div className="status-avatar pulse">🛡️</div>
+                  <div className="status-avatar pulse" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'var(--accent-color)'}}><Ic.Shield s={22}/></div>
                   <div className="status-info">
                      <h4>Security Shield: Active</h4>
                      <p>All nodes synchronized</p>
@@ -635,7 +635,7 @@ function Chat({ disconnectWallet }) {
                
                <div className="status-group-title">Live Network Feed</div>
                <div className="status-item premium">
-                  <div className="status-avatar update">🌐</div>
+                  <div className="status-avatar update" style={{display:'flex',alignItems:'center',justifyContent:'center',color:'var(--accent-color)'}}><Ic.Globe s={22}/></div>
                   <div className="status-info">
                      <h4>Global Node Cluster</h4>
                      <p>12 nodes active in Zurich, SG, NY</p>
@@ -693,8 +693,8 @@ function Chat({ disconnectWallet }) {
             </div>
           </div>
           <div className="sidebar-actions">
-            <button className="icon-btn" onClick={() => setShowSettings(true)} title="Settings">⚙️</button>
-            <button className="icon-btn" onClick={disconnectWallet} title="Logout">Logout</button>
+            <button className="icon-btn" onClick={() => setShowSettings(true)} title="Settings"><Ic.Settings /></button>
+            <button className="icon-btn" onClick={disconnectWallet} title="Logout"><Ic.LogOut /></button>
           </div>
         </div>
       </div>
@@ -709,17 +709,17 @@ function Chat({ disconnectWallet }) {
             </div>
           </div>
           <div className="chat-header-right">
-            <button className="icon-btn" title="Video Call" onClick={() => startCall('Video Call')}>📹</button>
-            <button className="icon-btn" title="Voice Call" onClick={() => startCall('Voice Call')}>📞</button>
+            <button className="icon-btn" title="Video Call" onClick={() => startCall('Video Call')}><Ic.Video /></button>
+            <button className="icon-btn" title="Voice Call" onClick={() => startCall('Voice Call')}><Ic.Phone /></button>
             <div className="divider"></div>
             <div className="more-options-container">
-              <button className="icon-btn" title="More Options" onClick={() => setShowMoreOptions(!showMoreOptions)}>⋮</button>
+              <button className="icon-btn" title="More Options" onClick={() => setShowMoreOptions(!showMoreOptions)}><Ic.MoreVertical /></button>
               {showMoreOptions && (
                 <div className="options-dropdown">
-                  <div className="option-item" onClick={exportChat}>📤 Export Chat (.txt)</div>
-                  <div className="option-item" onClick={() => { setIsMuted(!isMuted); setShowMoreOptions(false); }}>{isMuted ? '🔊 Unmute' : '🔕 Mute'}</div>
-                  <div className="option-item danger" onClick={() => { clearChat(); setShowMoreOptions(false); }}>🗑️ Clear Chat</div>
-                  <div className="option-item danger" onClick={() => { handleBlock(); setShowMoreOptions(false); }}>🚫 Block</div>
+                  <div className="option-item" onClick={exportChat} style={{display:'flex',alignItems:'center',gap:'0.6rem'}}><Ic.Upload s={14}/> Export Chat (.txt)</div>
+                  <div className="option-item" onClick={() => { setIsMuted(!isMuted); setShowMoreOptions(false); }} style={{display:'flex',alignItems:'center',gap:'0.6rem'}}>{isMuted ? <><Ic.VolumeOn s={14}/> Unmute</> : <><Ic.VolumeOff s={14}/> Mute</>}</div>
+                  <div className="option-item danger" onClick={() => { clearChat(); setShowMoreOptions(false); }} style={{display:'flex',alignItems:'center',gap:'0.6rem'}}><Ic.Trash s={14}/> Clear Chat</div>
+                  <div className="option-item danger" onClick={() => { handleBlock(); setShowMoreOptions(false); }} style={{display:'flex',alignItems:'center',gap:'0.6rem'}}><Ic.Ban s={14}/> Block</div>
                 </div>
               )}
             </div>
@@ -728,10 +728,10 @@ function Chat({ disconnectWallet }) {
 
         <div className="messages-area whatsapp-bg">
           <div className="encryption-notice">
-            🛡️ Messages are end-to-end encrypted.
+            <span style={{display:'inline-flex',alignItems:'center',gap:'0.5rem'}}><Ic.Shield s={14}/> Messages are end-to-end encrypted.</span>
           </div>
           {messages.length === 0 && (
-            <div className="empty-chat">No messages yet. Say hi! 👋</div>
+            <div className="empty-chat">No messages yet. Send a secure message!</div>
           )}
           {messages.map((msg, index) => (
             <div key={index} className={`message-group ${msg.type}`}>
@@ -740,18 +740,18 @@ function Chat({ disconnectWallet }) {
               )}
               <div className={`message-bubble ${msg.type}`}>
                 <div className="message-header-actions">
-                  <span className="msg-dropdown" onClick={() => setActiveMsgMenu(activeMsgMenu === index ? null : index)}>▼</span>
+                  <span className="msg-dropdown" onClick={() => setActiveMsgMenu(activeMsgMenu === index ? null : index)} style={{display:'flex',alignItems:'center'}}><Ic.ChevronDown /></span>
                   {activeMsgMenu === index && (
                     <div className="msg-context-menu">
-                      <div className="msg-menu-item" onClick={() => { 
+                      <div className="msg-menu-item" style={{display:'flex',alignItems:'center',gap:'0.5rem'}} onClick={() => { 
                           try {
                               const dec = CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8);
                               navigator.clipboard.writeText(dec); 
                               showToast("Copied to clipboard", "success");
                           } catch(e){}
                           setActiveMsgMenu(null); 
-                      }}>📋 Copy Text</div>
-                      <div className="msg-menu-item danger" onClick={() => deleteMessage(index)}>🗑️ Delete Message</div>
+                      }}><Ic.Copy s={13}/> Copy Text</div>
+                      <div className="msg-menu-item danger" style={{display:'flex',alignItems:'center',gap:'0.5rem'}} onClick={() => deleteMessage(index)}><Ic.Trash s={13}/> Delete Message</div>
                     </div>
                   )}
                 </div>
@@ -783,7 +783,7 @@ function Chat({ disconnectWallet }) {
                 </div>
                 <div className="message-footer">
                   <span className="message-time">{msg.time}</span>
-                  {msg.type === "sent" && <span className="message-status">✓✓</span>}
+                  {msg.type === "sent" && <span className="message-status" style={{display:'inline-flex',alignItems:'center'}}><Ic.CheckCheck s={14}/></span>}
                 </div>
               </div>
             </div>
@@ -792,8 +792,8 @@ function Chat({ disconnectWallet }) {
 
         <div className="message-input-area">
           <div className="input-actions">
-            <button className="action-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>😊</button>
-            <button className="action-btn" onClick={handleAttachment}>📎</button>
+            <button className="action-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}><Ic.Smile /></button>
+            <button className="action-btn" onClick={handleAttachment}><Ic.Paperclip /></button>
           </div>
           <input 
             type="text" 
@@ -808,7 +808,7 @@ function Chat({ disconnectWallet }) {
             onClick={sendMessage}
             disabled={isBlocked}
           >
-            ➤
+            <Ic.Send s={17}/>
           </button>
           {showEmojiPicker && (
             <div className="emoji-picker-container" style={{ position: 'absolute', bottom: '100%', right: '0', zIndex: 1000, marginBottom: '10px' }}>
@@ -824,7 +824,7 @@ function Chat({ disconnectWallet }) {
       {(showContactInfo || showSettings) && (
         <div className="contact-info-sidebar">
           <div className="sidebar-header">
-            <button className="icon-btn" onClick={() => { setShowContactInfo(false); setShowSettings(false); }}>✕</button>
+            <button className="icon-btn" onClick={() => { setShowContactInfo(false); setShowSettings(false); }}><Ic.X /></button>
             <span>{showSettings ? 'Settings' : 'Contact Info'}</span>
           </div>
           <div className="sidebar-body">
