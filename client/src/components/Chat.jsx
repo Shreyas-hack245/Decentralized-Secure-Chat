@@ -289,7 +289,7 @@ function Chat({ disconnectWallet }) {
         }));
 
         socket.emit("send_message", messageData);
-        setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: `📄 ${file.name}`, time: messageData.time } : c));
+        setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: `[File] ${file.name}`, time: messageData.time } : c));
       }
     };
     input.click();
