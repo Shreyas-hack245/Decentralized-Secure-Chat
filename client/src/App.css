@@ -2177,6 +2177,38 @@ body.midnight .whatsapp-bg {
 .msg-menu-item.danger { color: #ff4d4d; }
 .msg-menu-item.danger:hover { background: rgba(255, 77, 77, 0.1); }
 
+/* Chat Header More Options Dropdown */
+.more-options-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.options-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 10px;
+  background: var(--secondary-bg, #050505);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  z-index: 100;
+  min-width: 180px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.option-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+  color: var(--text-primary, #fff);
+  white-space: nowrap;
+}
+.option-item:hover { background: rgba(255, 255, 255, 0.05); }
+.option-item.danger { color: #ff4d4d; }
+.option-item.danger:hover { background: rgba(255, 77, 77, 0.1); }
+
 /* File Attachments */
 .file-attachment {
   display: flex;

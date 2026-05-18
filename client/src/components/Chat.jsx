@@ -682,6 +682,7 @@ function Chat({ disconnectWallet }) {
                 <div className="options-dropdown">
                   <div className="option-item" onClick={exportChat}>📤 Export Chat (.txt)</div>
                   <div className="option-item" onClick={() => { setIsMuted(!isMuted); setShowMoreOptions(false); }}>{isMuted ? '🔊 Unmute' : '🔕 Mute'}</div>
+                  <div className="option-item danger" onClick={() => { clearChat(); setShowMoreOptions(false); }}>🗑️ Clear Chat</div>
                   <div className="option-item danger" onClick={() => { handleBlock(); setShowMoreOptions(false); }}>🚫 Block</div>
                 </div>
               )}
