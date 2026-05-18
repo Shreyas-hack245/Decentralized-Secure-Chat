@@ -93,6 +93,19 @@ function Chat({ disconnectWallet }) {
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [isUnlocking, setIsUnlocking] = useState(false);
   const callIntervalRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  // ── New Feature States ────────────────────────────────────────────────
+  const [replyTo, setReplyTo]             = useState(null);
+  const [searchInChat, setSearchInChat]   = useState('');
+  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [messageReactions, setMessageReactions] = useState({});
+  const [showReactionPicker, setShowReactionPicker] = useState(null);
+  const [isRecording, setIsRecording]     = useState(false);
+  const [pinnedMessage, setPinnedMessage] = useState(null);
+  const [starredMsgs, setStarredMsgs]     = useState(new Set());
+  const [forwardMsg, setForwardMsg]       = useState(null);
+  const [showForwardModal, setShowForwardModal] = useState(false);
 
   const activeChatId = chats.find(c => c.active)?.id || "global";
   const messages = chatMessages[activeChatId] || [];
@@ -134,6 +147,7 @@ function Chat({ disconnectWallet }) {
       type: "sent",
       chatId: activeChatId,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      replyRef: replyTo ? { username: replyTo.username, text: replyTo.text } : null,
     };
 
     setChatMessages(prev => ({
@@ -150,6 +164,7 @@ function Chat({ disconnectWallet }) {
     
     setChats(prev => prev.map(c => c.id === activeChatId ? { ...c, lastMsg: message, time: messageData.time } : c));
     setMessage("");
+    setReplyTo(null);
     socket.emit("stop_typing", { username, chat: activeChatId });
   }
 
@@ -230,6 +245,98 @@ function Chat({ disconnectWallet }) {
     const newSettings = { ...settings, [key]: !settings[key] };
     setSettings(newSettings);
     socket.emit("update_settings", { username, settings: newSettings });
+  }
+
+
+  const QUICK_REACTIONS = ['👍','❤️','😂','😮','😢','🔥'];
+
+  function toggleReaction(msgIndex, emoji) {
+    const key = activeChatId + '-' + msgIndex;
+    setMessageReactions(prev => {
+      const arr = prev[key] ? [...prev[key]] : [];
+      const idx = arr.findIndex(r => r.emoji === emoji);
+      if (idx >= 0) {
+        const updated = [...arr];
+        if (updated[idx].mine) {
+          updated[idx] = { ...updated[idx], count: updated[idx].count - 1, mine: false };
+          if (updated[idx].count === 0) updated.splice(idx, 1);
+        } else {
+          updated[idx] = { ...updated[idx], count: updated[idx].count + 1, mine: true };
+        }
+        return { ...prev, [key]: updated };
+      }
+      return { ...prev, [key]: [...arr, { emoji, count: 1, mine: true }] };
+    });
+    setShowReactionPicker(null);
+  }
+
+  function pinMessage(msg) {
+    try {
+      const decrypted = CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+      setPinnedMessage({ text: decrypted, username: msg.username });
+      showToast('Message pinned', 'success');
+    } catch(e) {}
+    setActiveMsgMenu(null);
+  }
+
+  function toggleStar(index) {
+    setStarredMsgs(prev => {
+      const key = activeChatId + '-' + index;
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+    setActiveMsgMenu(null);
+  }
+
+  function forwardMessage(msg) {
+    setForwardMsg(msg);
+    setShowForwardModal(true);
+    setActiveMsgMenu(null);
+  }
+
+  function doForward(targetChatId) {
+    if (!forwardMsg) return;
+    const messageData = {
+      username,
+      text: forwardMsg.text,
+      type: 'sent',
+      chatId: targetChatId,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      forwarded: true,
+    };
+    setChatMessages(prev => ({ ...prev, [targetChatId]: [...(prev[targetChatId] || []), messageData] }));
+    socket.emit('send_message', messageData);
+    setShowForwardModal(false);
+    setForwardMsg(null);
+    showToast('Message forwarded!', 'success');
+  }
+
+  function startVoiceNote() {
+    if (isRecording) {
+      setIsRecording(false);
+      showToast('Voice note sent (demo)', 'success');
+      const vMsg = {
+        username,
+        text: CryptoJS.AES.encrypt('[VOICE:0:12]', SECRET_KEY).toString(),
+        type: 'sent',
+        chatId: activeChatId,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setChatMessages(prev => ({ ...prev, [activeChatId]: [...(prev[activeChatId] || []), vMsg] }));
+      socket.emit('send_message', vMsg);
+    } else {
+      setIsRecording(true);
+      setTimeout(() => setIsRecording(false), 30000);
+    }
+  }
+
+  function replyMessage(msg, index) {
+    try {
+      const decrypted = CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8);
+      setReplyTo({ index, text: decrypted.substring(0, 60), username: msg.username });
+    } catch(e) {}
+    setActiveMsgMenu(null);
   }
 
   function clearCache() {
@@ -454,6 +561,12 @@ function Chat({ disconnectWallet }) {
     };
   }, [activeChatId, username]);
 
+
+  // Auto scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages, activeChatId]);
+
   const handleTyping = (val) => {
     setMessage(val);
     if (val.length > 0) {
@@ -607,7 +720,10 @@ function Chat({ disconnectWallet }) {
                       }
                     }}
                   >
-                    <div className="chat-avatar">{chat.name?.[0]}</div>
+                    <div className="chat-avatar" style={{position:'relative'}}>
+                      {chat.name?.[0]}
+                      <span className="online-dot" style={{background: chat.id === 'global' || chat.id === '1' ? '#27c93f' : '#888'}}></span>
+                    </div>
                     <div className="chat-info">
                       <div className="chat-name-row">
                         <span className="chat-name">{chat.name}</span>
@@ -709,6 +825,9 @@ function Chat({ disconnectWallet }) {
             </div>
           </div>
           <div className="chat-header-right">
+            <button className="icon-btn" title="Search Messages" onClick={() => { setShowSearchBar(!showSearchBar); setSearchInChat(''); }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </button>
             <button className="icon-btn" title="Video Call" onClick={() => startCall('Video Call')}><Ic.Video /></button>
             <button className="icon-btn" title="Voice Call" onClick={() => startCall('Voice Call')}><Ic.Phone /></button>
             <div className="divider"></div>
@@ -726,6 +845,29 @@ function Chat({ disconnectWallet }) {
           </div>
         </div>
 
+
+        {pinnedMessage && (
+          <div className="pinned-bar" onClick={() => {}}>
+            <div className="pinned-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1v6l2 4H6l2-4V1h8zm-2 14v8h-4v-8H4l2-2h12l2 2h-4z"/></svg></div>
+            <div className="pinned-content">
+              <span className="pinned-label">Pinned</span>
+              <span className="pinned-text">{pinnedMessage.username}: {pinnedMessage.text}</span>
+            </div>
+            <button className="pinned-close" onClick={() => setPinnedMessage(null)}>
+              <Ic.X s={13}/>
+            </button>
+          </div>
+        )}
+        {showSearchBar && (
+          <div className="search-in-chat-bar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input autoFocus type="text" placeholder="Search in conversation..." value={searchInChat} onChange={e => setSearchInChat(e.target.value)}/>
+            <span className="search-count">
+              {searchInChat ? messages.filter(m => { try { return CryptoJS.AES.decrypt(m.text, SECRET_KEY).toString(CryptoJS.enc.Utf8).toLowerCase().includes(searchInChat.toLowerCase()); } catch(e) { return false; } }).length + ' found' : ''}
+            </span>
+            <button onClick={() => { setShowSearchBar(false); setSearchInChat(''); }}><Ic.X s={14}/></button>
+          </div>
+        )}
         <div className="messages-area whatsapp-bg">
           <div className="encryption-notice">
             <span style={{display:'inline-flex',alignItems:'center',gap:'0.5rem'}}><Ic.Shield s={14}/> Messages are end-to-end encrypted.</span>
@@ -733,8 +875,11 @@ function Chat({ disconnectWallet }) {
           {messages.length === 0 && (
             <div className="empty-chat">No messages yet. Send a secure message!</div>
           )}
-          {messages.map((msg, index) => (
-            <div key={index} className={`message-group ${msg.type}`}>
+          {messages.filter(msg => {
+              if (!searchInChat) return true;
+              try { return CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8).toLowerCase().includes(searchInChat.toLowerCase()); } catch(e) { return false; }
+            }).map((msg, index) => (
+            <div key={index} className={`message-group ${msg.type} ${starredMsgs.has(activeChatId+'-'+index) ? 'starred-msg' : ''}`}>
               {msg.type === "received" && (
                 <span className="message-user">{msg.username}</span>
               )}
@@ -743,6 +888,19 @@ function Chat({ disconnectWallet }) {
                   <span className="msg-dropdown" onClick={() => setActiveMsgMenu(activeMsgMenu === index ? null : index)} style={{display:'flex',alignItems:'center'}}><Ic.ChevronDown /></span>
                   {activeMsgMenu === index && (
                     <div className="msg-context-menu">
+                      <div className="msg-menu-item" style={{display:'flex',alignItems:'center',gap:'0.5rem'}} onClick={() => replyMessage(msg, index)}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg> Reply
+                      </div>
+                      <div className="msg-menu-item" style={{display:'flex',alignItems:'center',gap:'0.5rem'}} onClick={() => toggleStar(index)}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill={starredMsgs.has(activeChatId+'-'+index) ? 'gold' : 'none'} stroke={starredMsgs.has(activeChatId+'-'+index) ? 'gold' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        {starredMsgs.has(activeChatId+'-'+index) ? 'Unstar' : 'Star'}
+                      </div>
+                      <div className="msg-menu-item" style={{display:'flex',alignItems:'center',gap:'0.5rem'}} onClick={() => pinMessage(msg)}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg> Pin
+                      </div>
+                      <div className="msg-menu-item" style={{display:'flex',alignItems:'center',gap:'0.5rem'}} onClick={() => forwardMessage(msg)}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg> Forward
+                      </div>
                       <div className="msg-menu-item" style={{display:'flex',alignItems:'center',gap:'0.5rem'}} onClick={() => { 
                           try {
                               const dec = CryptoJS.AES.decrypt(msg.text, SECRET_KEY).toString(CryptoJS.enc.Utf8);
@@ -750,11 +908,17 @@ function Chat({ disconnectWallet }) {
                               showToast("Copied to clipboard", "success");
                           } catch(e){}
                           setActiveMsgMenu(null); 
-                      }}><Ic.Copy s={13}/> Copy Text</div>
-                      <div className="msg-menu-item danger" style={{display:'flex',alignItems:'center',gap:'0.5rem'}} onClick={() => deleteMessage(index)}><Ic.Trash s={13}/> Delete Message</div>
+                      }}><Ic.Copy s={13}/> Copy</div>
+                      <div className="msg-menu-item danger" style={{display:'flex',alignItems:'center',gap:'0.5rem'}} onClick={() => deleteMessage(index)}><Ic.Trash s={13}/> Delete</div>
                     </div>
                   )}
                 </div>
+                {msg.replyRef && (
+                    <div className="reply-snippet">
+                      <span className="reply-user">{msg.replyRef.username}</span>
+                      <span className="reply-text">{msg.replyRef.text}</span>
+                    </div>
+                  )}
                 <div className="message-content">
                   {(() => {
                     if (!msg.text) return <p className="message-text">No message content</p>;
@@ -775,6 +939,20 @@ function Chat({ disconnectWallet }) {
                             );
                          }
                       }
+                      if (decrypted.startsWith('[VOICE:')) {
+                        const match = decrypted.match(/\[VOICE:(\d+):(\d+)\]/);
+                        return (
+                          <div className="voice-note">
+                            <button className="voice-play-btn" onClick={() => showToast('Voice playback coming soon', 'info')}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            </button>
+                            <div className="voice-waveform">
+                              {[...Array(20)].map((_,i) => <span key={i} className="wave-bar" style={{height: (Math.sin(i*0.8)+1.2)*12 + 'px'}}></span>)}
+                            </div>
+                            <span className="voice-duration">0:{match ? match[2].padStart(2,'0') : '00'}</span>
+                          </div>
+                        );
+                      }
                       return <p className="message-text">{decrypted}</p>;
                     } catch (e) {
                       return <p className="message-text">Message encrypted or corrupted</p>;
@@ -785,12 +963,40 @@ function Chat({ disconnectWallet }) {
                   <span className="message-time">{msg.time}</span>
                   {msg.type === "sent" && <span className="message-status" style={{display:'inline-flex',alignItems:'center'}}><Ic.CheckCheck s={14}/></span>}
                 </div>
+              {messageReactions[activeChatId+'-'+index]?.length > 0 && (
+                  <div className="reactions-row">
+                    {messageReactions[activeChatId+'-'+index].map((r,ri) => (
+                      <span key={ri} className={`reaction-chip ${r.mine ? 'mine' : ''}`} onClick={() => toggleReaction(index, r.emoji)}>
+                        {r.emoji} {r.count > 1 ? r.count : ''}
+                      </span>
+                    ))}
+                    <span className="reaction-add-btn" onClick={() => setShowReactionPicker(showReactionPicker === index ? null : index)}>+</span>
+                  </div>
+                )}
+                {showReactionPicker === index && (
+                  <div className="reaction-picker">
+                    {QUICK_REACTIONS.map(em => (
+                      <span key={em} className="reaction-option" onClick={() => toggleReaction(index, em)}>{em}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef}/>
         </div>
 
         <div className="message-input-area">
+          {replyTo && (
+            <div className="reply-bar">
+              <div className="reply-bar-content">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+                <span className="reply-bar-user">{replyTo.username}</span>
+                <span className="reply-bar-text">{replyTo.text}{replyTo.text.length >= 60 ? '...' : ''}</span>
+              </div>
+              <button onClick={() => setReplyTo(null)}><Ic.X s={14}/></button>
+            </div>
+          )}
           <div className="input-actions">
             <button className="action-btn" onClick={() => setShowEmojiPicker(!showEmojiPicker)}><Ic.Smile /></button>
             <button className="action-btn" onClick={handleAttachment}><Ic.Paperclip /></button>
@@ -803,13 +1009,20 @@ function Chat({ disconnectWallet }) {
             onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
             disabled={isBlocked}
           />
-          <button 
-            className={`send-btn ${(message.trim() && !isBlocked) ? 'active' : ''}`} 
-            onClick={sendMessage}
-            disabled={isBlocked}
-          >
-            <Ic.Send s={17}/>
-          </button>
+          {!message.trim() && !isBlocked && (
+            <button className={`mic-btn ${isRecording ? 'recording' : ''}`} onClick={startVoiceNote} title={isRecording ? 'Stop recording' : 'Voice note'}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill={isRecording ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+          )}
+          {(message.trim() || isBlocked) && (
+            <button 
+              className={`send-btn ${(message.trim() && !isBlocked) ? 'active' : ''}`} 
+              onClick={sendMessage}
+              disabled={isBlocked}
+            >
+              <Ic.Send s={17}/>
+            </button>
+          )}
           {showEmojiPicker && (
             <div className="emoji-picker-container" style={{ position: 'absolute', bottom: '100%', right: '0', zIndex: 1000, marginBottom: '10px' }}>
               <EmojiPicker 
@@ -937,6 +1150,26 @@ function Chat({ disconnectWallet }) {
         </div>
       )}
 
+
+      {showForwardModal && (
+        <div className="modal-overlay">
+          <div className="glass-morphism modal-content">
+            <h3>Forward Message</h3>
+            <p>Select a chat to forward to:</p>
+            <div className="forward-chat-list">
+              {chats.map(ch => (
+                <div key={ch.id} className="forward-chat-item" onClick={() => doForward(ch.id)}>
+                  <div className="chat-avatar">{ch.name?.[0]}</div>
+                  <span>{ch.name}</span>
+                </div>
+              ))}
+            </div>
+            <div className="modal-btns">
+              <button className="cancel-btn" onClick={() => setShowForwardModal(false)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       {showNewChatModal && (
         <div className="modal-overlay">
           <div className="glass-morphism modal-content">
