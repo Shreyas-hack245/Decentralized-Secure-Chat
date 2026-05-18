@@ -477,14 +477,14 @@ function Chat({ disconnectWallet }) {
         <div className={`glass-morphism login-card premium-login ${isUnlocking ? 'unlocking' : ''}`}>
           {isUnlocking ? (
             <div className="unlock-animation-container">
-              <div className="unlock-icon">🔓</div>
+              <div className="unlock-icon" style={{display:'flex',justifyContent:'center',color:'var(--accent-color)'}}><Ic.Lock s={52}/></div>
               <h2 className="decrypting-text">Decrypting Keys...</h2>
               <div className="progress-bar"><div className="progress-fill"></div></div>
             </div>
           ) : (
             <>
               <div className="login-header">
-                <div className="login-lock-icon">🔐</div>
+                <div className="login-lock-icon" style={{display:"flex",justifyContent:"center",color:"var(--accent-color)"}}><Ic.Lock s={48}/></div>
                 <h1>Secure Login</h1>
                 <p>Your privacy, protected by end-to-end encryption</p>
               </div>
@@ -512,7 +512,7 @@ function Chat({ disconnectWallet }) {
                   Connect Securely
                 </button>
                 <div className="login-footer">
-                  <p>🔒 AES-256 Bit Encryption Active</p>
+                  <p style={{display:'inline-flex',alignItems:'center',gap:'0.4rem'}}><Ic.Shield s={14}/>AES-256 Bit Encryption Active</p>
                 </div>
               </div>
             </>
@@ -645,21 +645,21 @@ function Chat({ disconnectWallet }) {
 
                <div className="status-group-title">Platform Changelog</div>
                <div className="status-item">
-                  <div className="status-avatar update">✨</div>
+                  <div className="status-avatar update" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent-color)"}}><Ic.Zap s={22}/></div>
                   <div className="status-info">
                      <h4>Quantum-Resistant Layer</h4>
                      <p>v2.5.0 Deployment successful</p>
                   </div>
                </div>
                <div className="status-item">
-                  <div className="status-avatar update">🔐</div>
+                  <div className="status-avatar update" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent-color)"}}><Ic.Key s={22}/></div>
                   <div className="status-info">
                      <h4>Multi-sig Key Exchange</h4>
                      <p>Updated for group conversations</p>
                   </div>
                </div>
                <div className="status-item">
-                  <div className="status-avatar update">🛡️</div>
+                  <div className="status-avatar update" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent-color)"}}><Ic.Shield s={22}/></div>
                   <div className="status-info">
                      <h4>My Security Pulse</h4>
                      <p>Encrypted & Secure</p>
@@ -667,14 +667,14 @@ function Chat({ disconnectWallet }) {
                </div>
                <div className="status-group-title">Recent Updates</div>
                <div className="status-item">
-                  <div className="status-avatar update">✨</div>
+                  <div className="status-avatar update" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent-color)"}}><Ic.Zap s={22}/></div>
                   <div className="status-info">
                      <h4>Node v2.4.0</h4>
                      <p>Optimized packet delivery</p>
                   </div>
                </div>
                <div className="status-item">
-                  <div className="status-avatar update">🔐</div>
+                  <div className="status-avatar update" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"var(--accent-color)"}}><Ic.Key s={22}/></div>
                   <div className="status-info">
                      <h4>E2EE Kernel</h4>
                      <p>Zero-knowledge proof updated</p>
@@ -765,12 +765,12 @@ function Chat({ disconnectWallet }) {
                          if (match) {
                             return (
                               <div className="file-attachment">
-                                <div className="file-icon">📄</div>
+                                <div className="file-icon" style={{display:"flex",color:"var(--accent-color)"}}><Ic.File s={32}/></div>
                                 <div className="file-details">
                                   <span className="file-name">{match[1]}</span>
                                   <span className="file-size">{match[2]} - Secure File</span>
                                 </div>
-                                <button className="file-download-btn" onClick={() => showToast("Decrypting file...", "info")}>⬇️</button>
+                                <button className="file-download-btn" onClick={() => showToast("Decrypting file...", "info")} style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Ic.Download s={14}/></button>
                               </div>
                             );
                          }
@@ -834,7 +834,7 @@ function Chat({ disconnectWallet }) {
                     <div className="settings-group-title">Account & Security</div>
                     <div className="setting-item-premium">
                        <div className="setting-label">
-                          <span className="setting-icon">🔔</span>
+                          <span className="setting-icon" style={{display:"flex",color:"var(--accent-color)"}}><Ic.Bell s={17}/></span>
                           <span>Notifications</span>
                        </div>
                        <label className="switch">
@@ -844,7 +844,7 @@ function Chat({ disconnectWallet }) {
                     </div>
                     <div className="setting-item-premium">
                        <div className="setting-label">
-                          <span className="setting-icon">🔒</span>
+                          <span className="setting-icon" style={{display:"flex",color:"var(--accent-color)"}}><Ic.Lock s={17}/></span>
                           <span>Privacy Lock</span>
                        </div>
                        <label className="switch">
@@ -854,7 +854,7 @@ function Chat({ disconnectWallet }) {
                     </div>
                     <div className="setting-item-premium">
                        <div className="setting-label">
-                          <span className="setting-icon">🗑️</span>
+                          <span className="setting-icon" style={{display:"flex",color:"var(--accent-color)"}}><Ic.Trash s={17}/></span>
                           <span>Auto-delete</span>
                        </div>
                        <label className="switch">
@@ -868,7 +868,7 @@ function Chat({ disconnectWallet }) {
                     <div className="settings-group-title">Appearance</div>
                     <div className="setting-item-premium">
                        <div className="setting-label">
-                          <span className="setting-icon">🌙</span>
+                          <span className="setting-icon" style={{display:"flex",color:"var(--accent-color)"}}><Ic.Moon s={17}/></span>
                           <span>Dark Mode</span>
                        </div>
                        <label className="switch">
@@ -878,7 +878,7 @@ function Chat({ disconnectWallet }) {
                     </div>
                     <div className="setting-item-premium">
                        <div className="setting-label">
-                          <span className="setting-icon">🎨</span>
+                          <span className="setting-icon" style={{display:"flex",color:"var(--accent-color)"}}><Ic.Palette s={17}/></span>
                           <span>Midnight Theme</span>
                        </div>
                        <button className="theme-btn" onClick={() => toggleTheme('midnight')}>Toggle</button>
@@ -889,7 +889,7 @@ function Chat({ disconnectWallet }) {
                     <div className="settings-group-title">System</div>
                     <div className="setting-item-premium">
                        <div className="setting-label">
-                          <span className="setting-icon">🧹</span>
+                          <span className="setting-icon" style={{display:"flex",color:"var(--accent-color)"}}><Ic.Database s={17}/></span>
                           <span>Cache</span>
                        </div>
                        <button className="clear-btn-small" onClick={clearCache}>Clear Data</button>
@@ -922,9 +922,9 @@ function Chat({ disconnectWallet }) {
                 <div className="contact-section-item">
                    <h4>Media, Links and Docs</h4>
                    <div className="media-preview">
-                      <div className="media-box has-image"><div className="lock-overlay">🔐</div></div>
-                      <div className="media-box has-image"><div className="lock-overlay">🔐</div></div>
-                      <div className="media-box has-image"><div className="lock-overlay">🔐</div></div>
+                      <div className="media-box has-image"><div className="lock-overlay" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.4)"}}><Ic.Lock s={24}/></div></div>
+                      <div className="media-box has-image"><div className="lock-overlay" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.4)"}}><Ic.Lock s={24}/></div></div>
+                      <div className="media-box has-image"><div className="lock-overlay" style={{display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.4)"}}><Ic.Lock s={24}/></div></div>
                    </div>
                 </div>
                 <div className="contact-actions">
