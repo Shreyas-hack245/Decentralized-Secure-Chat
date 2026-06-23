@@ -5,8 +5,10 @@ import Hero from "./components/Hero";
 import Chat from "./components/Chat";
 import Background from "./components/Background";
 import Footer from "./components/Footer";
-
 import EncryptionStream from "./components/EncryptionStream";
+import Features from "./components/Features";
+import Stats from "./components/Stats";
+import FAQ from "./components/FAQ";
 
 function App() {
   const [walletConnected, setWalletConnected] = useState(false);
@@ -22,17 +24,19 @@ function App() {
   return (
     <div className="app-container">
       <Background />
-      <Navbar 
-        walletConnected={walletConnected} 
-        connectWallet={connectWallet} 
-        disconnectWallet={disconnectWallet}
-      />
-
+      
       {!walletConnected ? (
         <>
+          <Navbar 
+            walletConnected={walletConnected} 
+            connectWallet={connectWallet} 
+            disconnectWallet={disconnectWallet}
+          />
           <Hero connectWallet={connectWallet} />
+          <Features />
+          <Stats />
           <EncryptionStream />
-
+          <FAQ />
           <Footer />
         </>
       ) : (
